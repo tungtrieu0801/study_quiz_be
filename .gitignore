@@ -26,3 +26,6 @@ build/
 
 # Optional
 coverage/
+
+.idea/
+*.iml

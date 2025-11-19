@@ -1,12 +1,12 @@
 class LoginUserDto {
-    constructor({ email, password }) {
-        this.email = email?.trim().toLowerCase();
+    constructor({ username, password }) {
+        this.username = username?.trim().toLowerCase();
         this.password = password;
     }
 
     validate() {
-        if (!this.email || !this.password) {
-            throw new Error('Email and password are required');
+        if (!this.username || !this.password) {
+            throw new Error('Username and password are required');
         }
     }
 }

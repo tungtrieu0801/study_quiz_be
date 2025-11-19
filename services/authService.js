@@ -9,17 +9,16 @@ const jwt = require('jsonwebtoken');
 exports.registerUser = async (dto) => {
     dto.validate();
 
-    const existingUser = await User.findOne({ email: dto.email });
+    const existingUser = await User.findOne({ username: dto.username });
     if (existingUser) throw new Error('Email already registered');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const user = new User({ name: dto.name, email: dto.email, passwordHash });
+    const user = new User({ name: dto.username, passwordHash });
     await user.save();
 
     return {
         id: user._id,
-        name: user.name,
-        email: user.email
+        username: user.username,
     };
 };
 
