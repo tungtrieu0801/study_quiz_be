@@ -10,10 +10,14 @@ exports.registerUser = async (dto) => {
     dto.validate();
 
     const existingUser = await User.findOne({ username: dto.username });
-    if (existingUser) throw new Error('Email already registered');
+    if (existingUser) throw new Error('Username already registered');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const user = new User({ name: dto.username, passwordHash });
+    const user = new User({
+        username: dto.username,
+        passwordHash: passwordHash,
+        gradeLevel: dto.gradeLevel
+    });
     await user.save();
 
     return {
@@ -21,6 +25,7 @@ exports.registerUser = async (dto) => {
         username: user.username,
     };
 };
+
 
 /**
  * Login user
@@ -35,7 +40,7 @@ exports.loginUser = async (dto) => {
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isMatch) throw new Error('Invalid credentials');
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
     return {
         token,

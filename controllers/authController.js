@@ -2,10 +2,9 @@ const authService = require('../services/authService');
 const {RegisterUserDto} = require("../dtos/auth/RegisterUserDto");
 const {LoginUserDto} = require("../dtos/auth/LoginUserDto");
 
-
 exports.register = async (req, res) => {
+    const dto = new RegisterUserDto(req.body);
     try {
-        const dto = new RegisterUserDto(req.body);
         const user = await authService.registerUser(dto);
         res.status(201).json({
             success: true,
@@ -13,12 +12,11 @@ exports.register = async (req, res) => {
             data: user
         });
     } catch (err) {
-        if (err.message === 'Email already registered') {
-            return res.status(409).json({ success: false, message: err.message });
-        }
-        res.status(400).json({ success: false, message: err.message });
+        const status = err.message.includes('registered') ? 409 : 400;
+        res.status(status).json({ success: false, message: err.message });
     }
 };
+
 
 exports.login = async (req, res) => {
     try {
