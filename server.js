@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const questionRoutes = require('./routes/questions');
+const userRoutes = require('./routes/users');
 dotenv.config();
 
 const app = express();
@@ -12,7 +13,7 @@ app.use(express.json());
 // Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/questions', authMiddleware, questionRoutes);
-// app.use('/api/quizzes', quizRoutes);
+app.use('/api/user', userRoutes);
 // app.use('/api/results', resultRoutes);
 const startServer = async () => {
     await connectDB();

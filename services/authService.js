@@ -46,8 +46,7 @@ exports.loginUser = async (dto) => {
         token,
         user: {
             id: user._id,
-            name: user.name,
-            email: user.email,
+            fullName: user.username,
             role: user.role
         }
     };
