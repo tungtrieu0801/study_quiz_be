@@ -1,9 +1,10 @@
 const userService = require('../services/userService');
+const UpdateUserDto = require('../dtos/user/UpdateUserDto');
 
 exports.updateUser = async (req, res) => {
     const dto = new UpdateUserDto(req.body);
     const userInformation = req.user;
-    if (userInformation.id !== dto.id ) {
+    if (userInformation.id !== dto.userId ) {
         res.status(403).json({ success: false, error: "Forbidden" });
     }
     try {
@@ -14,6 +15,6 @@ exports.updateUser = async (req, res) => {
             data: updatedUser,
         });
     } catch (e) {
-        res.status(400).join({ success: false, error: e });
+        res.status(400).json({ success: false, error: e });
     }
 }

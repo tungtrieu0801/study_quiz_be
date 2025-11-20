@@ -34,7 +34,7 @@ exports.registerUser = async (dto) => {
 exports.loginUser = async (dto) => {
     dto.validate();
 
-    const user = await User.findOne({ email: dto.email });
+    const user = await User.findOne({ username: dto.username });
     if (!user) throw new Error('Invalid credentials');
 
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
@@ -46,7 +46,7 @@ exports.loginUser = async (dto) => {
         token,
         user: {
             id: user._id,
-            fullName: user.username,
+            fullName: user.fullName !== undefined ? user.fullName : user.username,
             role: user.role
         }
     };

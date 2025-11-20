@@ -7,7 +7,7 @@ const Question = require('../models/Question');
 exports.createQuestion = async (dto, userInformation) => {
     dto.validate();
     const userRole = userInformation.role;
-    if ('student' === userRole) {
+    if ('admin' === userRole) {
         const question = new Question({
             content: dto.content,
             options: dto.options,
@@ -15,7 +15,8 @@ exports.createQuestion = async (dto, userInformation) => {
             updatedAt: new Date(dto.updatedAt),
             tags: dto.tags,
             solution: dto.solution,
-            gradeLevel: dto.gradeLevel
+            gradeLevel: dto.gradeLevel,
+            testIds: dto.testIds,
         })
         await question.save();
         return question;
@@ -37,7 +38,7 @@ exports.getQuestions = async ({ page = 0, size = 10, testId, userInformation }) 
         .limit(size)
         .sort({ updatedAt: -1 });
 
-    if ('student' === userInformation.role) {
+    if ('admin' === userInformation.role) {
         query = query.select('-answer'); // loại bỏ trường answer
     }
 

@@ -5,7 +5,7 @@ const TestSchema = new mongoose.Schema({
     description: { type: String, trim: true, required: true },
     questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    duration: { type: Number, required: true },
+    duration: { type: String },
     gradeLevel: { type: String, trim: true },
     tags: [String],
     createdAt: { type: Date, default: Date.now },

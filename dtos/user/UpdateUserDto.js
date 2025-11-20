@@ -1,7 +1,8 @@
 class UpdateUserDto {
-    constructor({ userId, fullName, gradeLevel }) {
-        this.id = userId;
+    constructor({ userId, fullName }) {
+        this.userId = userId;
         this.fullName = fullName;
-        this.gradeLevel = gradeLevel;
     }
 }
+
+module.exports = UpdateUserDto;
