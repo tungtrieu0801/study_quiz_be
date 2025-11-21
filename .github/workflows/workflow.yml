@@ -58,6 +58,7 @@ jobs:
 
             echo "Cập nhật IMAGE_TAG trong .env"
             sed -i "/^IMAGE_TAG=/c\IMAGE_TAG=$IMAGE_TAG" .env
+            sed -i "/^BACKUP_TAG=/c\BACKUP_TAG=$BACKUP_TAG" .env
 
             echo "Xóa container backend cũ nếu còn tồn tại"
             docker rm -f study_quiz_be || true
