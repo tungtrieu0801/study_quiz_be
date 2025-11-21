@@ -55,21 +55,25 @@ jobs:
           envs: IMAGE_TAG BACKUP_TAG
           script: |
             cd /opt/study_quiz
-
-            echo "Cập nhật IMAGE_TAG trong .env"
+            
+            export IMAGE_TAG=${IMAGE_TAG:-latest}
+            export BACKUP_TAG=${BACKUP_TAG:-backup-latest}
+            
+            echo "Cập nhật IMAGE_TAG và BACKUP_TAG trong .env"
             sed -i "/^IMAGE_TAG=/c\IMAGE_TAG=$IMAGE_TAG" .env
             sed -i "/^BACKUP_TAG=/c\BACKUP_TAG=$BACKUP_TAG" .env
-
+            
             echo "Xóa container backend cũ nếu còn tồn tại"
             docker rm -f study_quiz_be || true
-
+            
             echo "Pull image mới"
             docker pull tungtrieu0801/study_quiz_be:$IMAGE_TAG
             docker pull tungtrieu0801/study_quiz_be:latest
             docker pull tungtrieu0801/study_quiz_be:$BACKUP_TAG
-
+            
             echo "Restart backend với image mới"
-            docker compose up -d backend
-
+            docker-compose up -d backend   # <-- chú ý docker-compose hoặc docker compose tùy VPS
+            
             echo "Dọn dẹp các dangling images (không xóa backup)"
             docker image prune -f --filter "dangling=true"
+
