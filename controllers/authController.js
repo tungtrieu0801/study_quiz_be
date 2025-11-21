@@ -21,6 +21,7 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const dto = new LoginUserDto(req.body);
+        console.log(dto);
         const result = await authService.loginUser(dto);
         res.json({
             success: true,
