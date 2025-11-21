@@ -9,7 +9,7 @@ const { CreateTestDto } = require('../dtos/testList/CreateTestDto');
 exports.createTest = async (dto, userInformation) => {
     dto.validate();
     const userRole = userInformation.role;
-    if ('student' === userRole) {
+    if ('admin' === userRole) {
         const test = new Test({
             title: dto.title,
             description: dto.description,
