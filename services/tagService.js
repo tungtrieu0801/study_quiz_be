@@ -17,31 +17,60 @@ exports.createTag = async (dto, userInformation) => {
     return tag;
 };
 
-exports.getAllTags = async ({ page = 1, size = 10 } = {}) => {
-    const skip = (page - 1) * size;
-    const tags = await Tag.find()
-        .sort({ name: 1 })
-        .skip(skip)
-        .limit(size);
+exports.getAllTags = async (page, size, tagName ) => {
+    const filter = {};
+    if (tagName !== undefined && tagName.trim() !== "") {
+        filter.name = tagName.trim();
+    }
 
-    const total = await Tag.countDocuments();
+    const tagList = await Tag.find(filter)
+        .skip(page * size)
+        .limit(size)
+        .sort({ updatedAt: -1 });
+    const total = await Tag.countDocuments(filter);
 
     return {
-        data: tags,
-        message: 'Tags retrieved successfully',
-        page,
-        size,
+        tagList,
         total,
-        totalPages: Math.ceil(total / size),
     };
 };
 
+exports.updateTag = async (id, dto, userInformation) => {
+    dto.validate();
+
+    const existingTag = await Tag.findById(id);
+    if (!existingTag) {
+        throw new Error("Tag not found");
+    }
+
+    // Kiểm tra trùng tên (nhưng bỏ qua chính nó)
+    const nameExists = await Tag.findOne({ name: dto.name, _id: { $ne: id } });
+    if (nameExists) {
+        return { error: "Tag name already exists" };
+    }
+
+    existingTag.name = dto.name;
+    existingTag.description = dto.description;
+
+    await existingTag.save();
+
+    return existingTag;
+};
+
 exports.deleteTag = async (id) => {
-    await Question.updateMany(
-        { tags: id},
-        { $pull: {tags: id} }
-    )
-    const tag = await Tag.findByIdAndDelete(id);
-    if (!tag) return { error: 'Tag not found' };
-    return tag;
-}
+    const tag = await Tag.findById(id);
+    if (!tag) {
+        throw new Error("Tag not found");
+    }
+
+    // Optional: Check nếu tag đang gắn cho câu hỏi
+    const isUsed = await Question.findOne({ tags: id });
+    if (isUsed) {
+        return { error: "Tag is being used in questions" };
+    }
+
+    await Tag.findByIdAndDelete(id);
+
+    return { success: true };
+};
+

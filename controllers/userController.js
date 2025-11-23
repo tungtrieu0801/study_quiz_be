@@ -18,3 +18,21 @@ exports.updateUser = async (req, res) => {
         res.status(400).json({ success: false, error: e });
     }
 }
+
+exports.getStudents = async (req, res) => {
+    const userInformation = req.user;
+    const page = parseInt(req.query.page) || 0;
+    const size = parseInt(req.query.size) || 10;
+    const gradeLevel = req.query.gradeLevel;
+    const studentName = req.query.studentName;
+    try {
+        const listStudent = await userService.getStudents(page, size, gradeLevel, studentName);
+        res.status(200).json({
+            status: "success",
+            message: "User Information",
+            data: listStudent,
+        })
+    } catch (e) {
+        res.status(400).json({ success: false, error: e });
+    }
+}
