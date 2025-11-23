@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Question = require("../models/Question");
 
 exports.updateUser = async (dto) => {
     try {
@@ -14,3 +15,25 @@ exports.updateUser = async (dto) => {
         return { error: "Cannot update user" };
     }
 }
+
+exports.getStudents = async (page, size, gradeLevel, studentName) => {
+
+    const filter = { role: "student" };
+
+    if (gradeLevel !== undefined && gradeLevel !== null && gradeLevel !== "") {
+        filter.gradeLevel = gradeLevel;
+    }
+
+    if (studentName && studentName.trim() !== "") {
+        filter.fullName = { $regex: studentName, $options: "i" };
+    }
+
+    const students = await User.find(filter)
+        .skip(page * size)
+        .limit(size)
+        .sort({ updatedAt: -1 });
+
+    const total = await User.countDocuments(filter);
+
+    return { students, total };
+};

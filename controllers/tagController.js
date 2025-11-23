@@ -1,5 +1,6 @@
 const tagService = require('../services/tagService');
 const CreateTagDto = require('../dtos/tag/CreateTagDto');
+const UpdateTagDto = require("../dtos/tag/UpdateTagDto");
 
 exports.createTag = async (req, res) => {
     const tagDto = new CreateTagDto(req.body);
@@ -21,10 +22,15 @@ exports.createTag = async (req, res) => {
 }
 
 exports.getAllTags = async (req, res) => {
+    const userInformation = req.user;
+    const page = parseInt(req.query.page) || 0;
+    const size = parseInt(req.query.size) || 10;
+    const tagName = req.query.tagName;
     try {
-        const tags = await tagService.getAllTags();
+        const tags = await tagService.getAllTags(page, size, tagName);
         res.json({
-            success: true,
+            status: "success",
+            message: "Get All Tags successfully",
             data: tags
         });
     } catch (err) {
@@ -32,19 +38,43 @@ exports.getAllTags = async (req, res) => {
     }
 }
 
-exports.deleteTag = async (req, res) => {
+exports.updateTag = async (req, res) => {
+    const id = req.params.id;
+    const dto = new UpdateTagDto(req.body);
+    const userInformation = req.user;
+
     try {
-        const tagId = req.params.id;
-        const result = await tagService.deleteTag(tagId);
-        if (result.error) {
-            return res.status(404).json({ success: false, message: result.error });
+        const updated = await tagService.updateTag(id, dto, userInformation);
+
+        if (updated.error) {
+            return res.status(400).json({ success: false, message: updated.error });
         }
+
         res.json({
             success: true,
-            message: 'Tag deleted successfully',
-            data: result
+            message: "Tag updated successfully",
+            data: updated
         });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
-}
+};
+
+exports.deleteTag = async (req, res) => {
+    const id = req.params.id;
+
+    try {
+        const result = await tagService.deleteTag(id);
+
+        if (result.error) {
+            return res.status(400).json({ success: false, message: result.error });
+        }
+
+        res.json({
+            success: true,
+            message: "Tag deleted successfully"
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
