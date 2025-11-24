@@ -1,12 +1,14 @@
 const tagService = require('../services/tagService');
-const CreateTagDto = require('../dtos/tag/CreateTagDto');
-const UpdateTagDto = require("../dtos/tag/UpdateTagDto");
+const { CreateTagDto } = require('../dtos/tag/CreateTagDto');
+const { UpdateTagDto } = require("../dtos/tag/UpdateTagDto");
 
 exports.createTag = async (req, res) => {
-    const tagDto = new CreateTagDto(req.body);
-    const userInformation = req.user;
     try {
+        const tagDto = new CreateTagDto(req.body);
+        const userInformation = req.user;
+
         const tag = await tagService.createTag(tagDto, userInformation);
+
         if (tag.error) {
             return res.status(400).json({ success: false, message: tag.error });
         }
@@ -22,16 +24,20 @@ exports.createTag = async (req, res) => {
 }
 
 exports.getAllTags = async (req, res) => {
-    const userInformation = req.user;
-    const page = parseInt(req.query.page) || 0;
-    const size = parseInt(req.query.size) || 10;
-    const tagName = req.query.tagName;
     try {
-        const tags = await tagService.getAllTags(page, size, tagName);
+        const page = parseInt(req.query.page) || 0;
+        const size = parseInt(req.query.size) || 10;
+        const tagName = req.query.tagName;
+
+        const result = await tagService.getAllTags(page, size, tagName);
+
         res.json({
-            status: "success",
+            success: true, // Thống nhất dùng success: true/false
             message: "Get All Tags successfully",
-            data: tags
+            data: result.tagList,
+            total: result.total,
+            page,
+            size
         });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -39,11 +45,12 @@ exports.getAllTags = async (req, res) => {
 }
 
 exports.updateTag = async (req, res) => {
-    const id = req.params.id;
-    const dto = new UpdateTagDto(req.body);
-    const userInformation = req.user;
-
     try {
+        const id = req.params.id;
+        // Nếu chưa có file UpdateTagDto, bạn có thể dùng tạm CreateTagDto hoặc req.body trực tiếp
+        const dto = new UpdateTagDto(req.body);
+        const userInformation = req.user;
+
         const updated = await tagService.updateTag(id, dto, userInformation);
 
         if (updated.error) {
@@ -56,14 +63,14 @@ exports.updateTag = async (req, res) => {
             data: updated
         });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        const status = err.message.includes('not found') ? 404 : 500;
+        res.status(status).json({ success: false, message: err.message });
     }
 };
 
 exports.deleteTag = async (req, res) => {
-    const id = req.params.id;
-
     try {
+        const id = req.params.id;
         const result = await tagService.deleteTag(id);
 
         if (result.error) {
@@ -75,6 +82,7 @@ exports.deleteTag = async (req, res) => {
             message: "Tag deleted successfully"
         });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        const status = err.message.includes('not found') ? 404 : 500;
+        res.status(status).json({ success: false, message: err.message });
     }
 };

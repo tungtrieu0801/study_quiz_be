@@ -1,12 +1,11 @@
 const testListService = require('../services/testListService');
 const { CreateTestDto } = require('../dtos/testList/CreateTestDto');
 
+// 1. CREATE
 exports.createTest = async (req, res) => {
-    console.log(req.body);
     const testDto = new CreateTestDto(req.body);
     const userInformation = req.user;
     try {
-
         const newTest = await testListService.createTest(testDto, userInformation);
         res.status(201).json({
             success: true,
@@ -15,15 +14,16 @@ exports.createTest = async (req, res) => {
         });
     } catch (err) {
         const status = err.message.includes('Only admins') ? 403 : 500;
-        res.status(500).json({ success: false, message: err.message });
+        res.status(status).json({ success: false, message: err.message });
     }
 }
 
+// 2. GET LIST
 exports.getListTests = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 0;   // trang hiện tại, mặc định 0
-        const size = parseInt(req.query.size) || 10;  // số item / trang, mặc định 10
-        const userInformation = req.user;             // nếu cần phân quyền
+        const page = parseInt(req.query.page) || 0;
+        const size = parseInt(req.query.size) || 10;
+        const userInformation = req.user;
 
         const result = await testListService.getListTests({ page, size, userInformation });
 
@@ -39,18 +39,61 @@ exports.getListTests = async (req, res) => {
     }
 };
 
-exports.deleteTest = async (req, res) => {
+// 3. GET DETAIL (Cái này để fix lỗi 404 ở frontend)
+exports.getTestDetail = async (req, res) => {
     try {
+        const { id } = req.params;
+        const test = await testListService.getTestDetail(id);
 
+        if (!test) {
+            return res.status(404).json({ success: false, message: 'Test not found' });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: test
+        });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
     }
-}
+};
 
+// 4. UPDATE
 exports.updateTest = async (req, res) => {
     try {
+        const { id } = req.params;
+        const updateData = req.body; // Dữ liệu cần sửa
+        const userInformation = req.user;
 
+        const updatedTest = await testListService.updateTest(id, updateData, userInformation);
+
+        res.status(200).json({
+            success: true,
+            message: 'Test updated successfully',
+            data: updatedTest
+        });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        const status = err.message.includes('Only admins') ? 403 :
+            err.message.includes('not found') ? 404 : 500;
+        res.status(status).json({ success: false, message: err.message });
+    }
+}
+
+// 5. DELETE
+exports.deleteTest = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userInformation = req.user;
+
+        await testListService.deleteTest(id, userInformation);
+
+        res.status(200).json({
+            success: true,
+            message: 'Test deleted successfully'
+        });
+    } catch (err) {
+        const status = err.message.includes('Only admins') ? 403 :
+            err.message.includes('not found') ? 404 : 500;
+        res.status(status).json({ success: false, message: err.message });
     }
 }
