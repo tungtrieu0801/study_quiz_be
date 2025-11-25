@@ -116,35 +116,42 @@ exports.submitTest = async (submissionData, userInformation) => {
         throw new Error("Bạn đã làm bài kiểm tra này rồi, không thể nộp lại.");
     }
 
-    // 2. Lấy câu hỏi từ DB
-    // Giả sử submissionData gửi lên danh sách questionIds hoặc ta query từ Test
-    // Ở đây ta query dựa trên keys của answers gửi lên
-    const questionIds = Object.keys(answers || {});
-    if (questionIds.length === 0) return { score: 0 };
+    // --- SỬA ĐỔI TỪ ĐÂY ---
 
-    const questions = await Question.find({ _id: { $in: questionIds } });
+    // 2. Lấy TOÀN BỘ câu hỏi của bài thi này từ DB
+    // (Lưu ý: Bạn cần đảm bảo Model Question có trường testId,
+    // hoặc logic lấy danh sách câu hỏi phải khớp với cách bạn lưu DB)
+    const questions = await Question.find({ testIds: testId });
+
+    if (!questions || questions.length === 0) {
+        throw new Error("Đề thi này chưa có câu hỏi.");
+    }
 
     let correctCount = 0;
     const resultDetails = [];
+    const userAnswersMap = answers || {}; // Đảm bảo không bị null
 
     // 3. Chấm điểm
     questions.forEach(q => {
-        const userAnswer = answers[q._id.toString()];
+        // Lấy đáp án user gửi lên, nếu không có thì là null/undefined
+        const userAnswer = userAnswersMap[q._id.toString()];
+
+        // So sánh: Nếu user không trả lời (undefined) thì auto sai
         const isCorrect = userAnswer === q.answer;
 
         if (isCorrect) correctCount++;
 
         resultDetails.push({
             questionId: q._id,
-            userAnswer: userAnswer,
+            userAnswer: userAnswer || null, // Lưu null nếu không trả lời
             isCorrect: isCorrect,
-            tags: q.tags // Lưu tag lại để thống kê Dashboard sau này
+            tags: q.tags
         });
     });
 
     const score = parseFloat(((correctCount / questions.length) * 10).toFixed(2));
 
-    // 4. Lưu kết quả vào DB
+    // 4. Lưu kết quả vào DB (BẮT BUỘC CHẠY KỂ CẢ KHI 0 ĐIỂM)
     const newResult = new TestResult({
         user: userId,
         test: testId,
@@ -156,19 +163,17 @@ exports.submitTest = async (submissionData, userInformation) => {
 
     await newResult.save();
 
-    // 5. Trả về kết quả (Chưa trả về chi tiết solution ngay nếu muốn bảo mật tuyệt đối,
-    // nhưng ở đây ta trả về để FE xử lý hiển thị "Xem chi tiết")
+    // 5. Trả về kết quả
     return {
         _id: newResult._id,
         score,
         correctCount,
         total: questions.length,
-        // Trả về chi tiết để FE tô màu
         details: resultDetails.map(d => ({
             questionId: d.questionId,
             isCorrect: d.isCorrect,
             userAnswer: d.userAnswer,
-            // Cần join lại questions gốc để lấy solution trả về cho FE hiển thị
+            // Tìm lại thông tin câu hỏi để trả về solution
             correctAnswer: questions.find(q => q._id.equals(d.questionId)).answer,
             solution: questions.find(q => q._id.equals(d.questionId)).solution
         }))

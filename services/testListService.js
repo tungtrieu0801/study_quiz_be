@@ -31,41 +31,51 @@ exports.createTest = async (dto, userInformation) => {
 // Thay thế hàm getTestList hiện tại trong file Service của bạn
 // Loại bỏ 'req, res' và chỉ nhận destructuring object
 exports.getTestList = async ({ page, size, userInformation }) => {
+    // Chuyển đổi page/size sang số (đề phòng gửi lên dạng string)
+    const pageNum = parseInt(page) || 1;
+    const sizeNum = parseInt(size) || 10;
+    const skip = (pageNum - 1) * sizeNum;
 
-    // Khai báo lại userRole và userId từ userInformation
     const userRole = userInformation.role;
     const userId = userInformation.id;
 
-    // 1. Lấy tất cả bài thi
-    const tests = await Test.find().sort({ createdAt: -1 });
-
-    // Lấy tổng số lượng (để Controller có thể tính Pagination)
+    // 1. Đếm tổng số lượng trước (để FE làm phân trang)
     const total = await Test.countDocuments({});
 
-    // 2. Xử lý logic cho Admin (trả về danh sách thô)
+    // 2. Query DB có Phân Trang (Thêm skip và limit)
+    const tests = await Test.find()
+        .sort({ createdAt: -1 })
+        .skip(skip)         // <--- BỔ SUNG
+        .limit(sizeNum);    // <--- BỔ SUNG
+
+    // 3. Nếu là Admin: Trả về luôn
     if (userRole === 'admin') {
-        // Chỉ trả về data và total
         return { tests, total };
     }
 
-    // 3. Nếu là Student: Kiểm tra trạng thái đã làm
-    const takenResults = await TestResult.find({ user: userId }).select('test score');
+    // 4. Nếu là Student: Kiểm tra trạng thái đã làm
+    // Lấy danh sách ID của các bài test vừa query được ở trang này
+    const testIdsOnPage = tests.map(t => t._id);
 
-    // Map lại danh sách test để thêm field 'isTaken' và 'score'
+    // Chỉ tìm kết quả thi của USER HIỆN TẠI trong phạm vi CÁC BÀI TEST CỦA TRANG NÀY
+    // (Tối ưu hơn việc query toàn bộ TestResult của user)
+    const takenResults = await TestResult.find({
+        user: userId,
+        test: { $in: testIdsOnPage }
+    }).select('test score');
+
+    // Map lại danh sách
     const testsWithStatus = tests.map(test => {
         const result = takenResults.find(r => r.test.toString() === test._id.toString());
         return {
-            // Dùng .toObject() để đảm bảo có thể thêm các property mới như isTaken
             ...test.toObject(),
             isTaken: !!result,
             score: result ? result.score : null
         };
     });
 
-    // Trả về object result đúng format Controller mong đợi
     return { tests: testsWithStatus, total };
 };
-
 /**
  * Get test detail by ID
  * @param {string} id
