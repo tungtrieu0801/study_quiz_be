@@ -104,3 +104,48 @@ exports.deleteQuestion = async (id, userInformation) => {
 
     return deletedQuestion;
 };
+
+/**
+ * Chấm điểm bài thi
+ * @param {Object} submissionData - { answers: { "questionId": "A", ... } }
+ */
+exports.submitTest = async (submissionData) => {
+    const userAnswers = submissionData.answers || {};
+    const questionIds = Object.keys(userAnswers);
+
+    if (questionIds.length === 0) {
+        return { score: 0, total: 0, correctCount: 0, details: [] };
+    }
+
+    // 1. Lấy tất cả câu hỏi từ DB dựa trên danh sách ID người dùng gửi lên
+    // Lưu ý: Cần lấy trường 'answer' và 'solution' để so sánh và giải thích
+    const questions = await Question.find({ _id: { $in: questionIds } });
+
+    let correctCount = 0;
+    const details = [];
+
+    // 2. Duyệt qua từng câu hỏi để chấm
+    questions.forEach(q => {
+        const userAnswer = userAnswers[q._id.toString()];
+        const isCorrect = userAnswer === q.answer; // So sánh chính xác chuỗi (VD: "A" === "A")
+
+        if (isCorrect) correctCount++;
+
+        details.push({
+            questionId: q._id,
+            isCorrect: isCorrect,
+            userAnswer: userAnswer,
+            correctAnswer: q.answer, // Trả về đáp án đúng để FE hiển thị
+            solution: q.solution     // Trả về lời giải
+        });
+    });
+
+    const score = (correctCount / questions.length) * 10; // Tính thang điểm 10
+
+    return {
+        score: parseFloat(score.toFixed(2)),
+        correctCount,
+        total: questions.length,
+        details // Trả về mảng chi tiết để tô màu xanh/đỏ ở Frontend
+    };
+};

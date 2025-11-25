@@ -82,3 +82,19 @@ exports.deleteQuestion = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 }
+
+exports.submitTest = async (req, res) => {
+    try {
+        // req.body = { answers: { "id1": "A", "id2": "B" } }
+        const result = await questionService.submitTest(req.body);
+
+        res.status(200).json({
+            success: true,
+            message: "Submit test successfully",
+            data: result
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Error submitting test" });
+    }
+};
