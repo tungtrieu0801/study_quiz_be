@@ -25,7 +25,7 @@ exports.getListTests = async (req, res) => {
         const size = parseInt(req.query.size) || 10;
         const userInformation = req.user;
 
-        const result = await testListService.getListTests({ page, size, userInformation });
+        const result = await testListService.getTestList({ page, size, userInformation });
 
         res.status(200).json({
             success: true,
@@ -97,3 +97,17 @@ exports.deleteTest = async (req, res) => {
         res.status(status).json({ success: false, message: err.message });
     }
 }
+
+exports.getTestStatistics = async (req, res) => {
+    try {
+        const { id } = req.params; // testId
+        const stats = await testListService.getTestStatistics(id);
+
+        res.status(200).json({
+            success: true,
+            data: stats
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};

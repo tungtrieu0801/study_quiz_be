@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {createTest, getListTests, deleteTest, updateTest, getTestDetail} = require("../controllers/testListController");
+const {createTest, getListTests, deleteTest, updateTest, getTestDetail, getTestStatistics} = require("../controllers/testListController");
 
 router.post('/', createTest);
 
@@ -17,4 +17,6 @@ router.put('/:id', updateTest);
 
 // 5. Xóa bài thi
 router.delete('/:id', deleteTest);
+
+router.get('/:id/statistics', getTestStatistics);
 module.exports = router;

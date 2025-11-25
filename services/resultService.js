@@ -1,4 +1,4 @@
-const Result = require('../models/Result');
+const Result = require('../models/TestResult');
 
 exports.submitResult = async () => {
     try {

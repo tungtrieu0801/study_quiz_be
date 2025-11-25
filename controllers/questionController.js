@@ -85,16 +85,20 @@ exports.deleteQuestion = async (req, res) => {
 
 exports.submitTest = async (req, res) => {
     try {
-        // req.body = { answers: { "id1": "A", "id2": "B" } }
-        const result = await questionService.submitTest(req.body);
+        const userInformation = req.user; // Lấy thông tin user từ token
+        // req.body cần có { testId: "...", answers: {...} }
+        const result = await questionService.submitTest(req.body, userInformation);
 
         res.status(200).json({
             success: true,
-            message: "Submit test successfully",
+            message: "Nộp bài thành công",
             data: result
         });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: "Error submitting test" });
+        // Nếu lỗi do trùng lặp (đã làm rồi)
+        if (err.code === 11000 || err.message.includes("đã làm bài")) {
+            return res.status(400).json({ success: false, message: "Bạn đã hoàn thành bài thi này rồi." });
+        }
+        res.status(500).json({ success: false, message: err.message });
     }
 };

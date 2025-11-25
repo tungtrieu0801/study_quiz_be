@@ -1,4 +1,5 @@
 const Question = require('../models/Question');
+const TestResult = require('../models/TestResult')
 /**
  * Register new user
  * @param {CreateQuestionDto} dto
@@ -105,47 +106,71 @@ exports.deleteQuestion = async (id, userInformation) => {
     return deletedQuestion;
 };
 
-/**
- * Chấm điểm bài thi
- * @param {Object} submissionData - { answers: { "questionId": "A", ... } }
- */
-exports.submitTest = async (submissionData) => {
-    const userAnswers = submissionData.answers || {};
-    const questionIds = Object.keys(userAnswers);
+exports.submitTest = async (submissionData, userInformation) => {
+    const { testId, answers } = submissionData;
+    const userId = userInformation.id;
 
-    if (questionIds.length === 0) {
-        return { score: 0, total: 0, correctCount: 0, details: [] };
+    // 1. Kiểm tra: Học sinh đã làm bài này chưa?
+    const existingResult = await TestResult.findOne({ user: userId, test: testId });
+    if (existingResult) {
+        throw new Error("Bạn đã làm bài kiểm tra này rồi, không thể nộp lại.");
     }
 
-    // 1. Lấy tất cả câu hỏi từ DB dựa trên danh sách ID người dùng gửi lên
-    // Lưu ý: Cần lấy trường 'answer' và 'solution' để so sánh và giải thích
+    // 2. Lấy câu hỏi từ DB
+    // Giả sử submissionData gửi lên danh sách questionIds hoặc ta query từ Test
+    // Ở đây ta query dựa trên keys của answers gửi lên
+    const questionIds = Object.keys(answers || {});
+    if (questionIds.length === 0) return { score: 0 };
+
     const questions = await Question.find({ _id: { $in: questionIds } });
 
     let correctCount = 0;
-    const details = [];
+    const resultDetails = [];
 
-    // 2. Duyệt qua từng câu hỏi để chấm
+    // 3. Chấm điểm
     questions.forEach(q => {
-        const userAnswer = userAnswers[q._id.toString()];
-        const isCorrect = userAnswer === q.answer; // So sánh chính xác chuỗi (VD: "A" === "A")
+        const userAnswer = answers[q._id.toString()];
+        const isCorrect = userAnswer === q.answer;
 
         if (isCorrect) correctCount++;
 
-        details.push({
+        resultDetails.push({
             questionId: q._id,
-            isCorrect: isCorrect,
             userAnswer: userAnswer,
-            correctAnswer: q.answer, // Trả về đáp án đúng để FE hiển thị
-            solution: q.solution     // Trả về lời giải
+            isCorrect: isCorrect,
+            tags: q.tags // Lưu tag lại để thống kê Dashboard sau này
         });
     });
 
-    const score = (correctCount / questions.length) * 10; // Tính thang điểm 10
+    const score = parseFloat(((correctCount / questions.length) * 10).toFixed(2));
 
+    // 4. Lưu kết quả vào DB
+    const newResult = new TestResult({
+        user: userId,
+        test: testId,
+        score: score,
+        correctCount: correctCount,
+        totalQuestions: questions.length,
+        details: resultDetails
+    });
+
+    await newResult.save();
+
+    // 5. Trả về kết quả (Chưa trả về chi tiết solution ngay nếu muốn bảo mật tuyệt đối,
+    // nhưng ở đây ta trả về để FE xử lý hiển thị "Xem chi tiết")
     return {
-        score: parseFloat(score.toFixed(2)),
+        _id: newResult._id,
+        score,
         correctCount,
         total: questions.length,
-        details // Trả về mảng chi tiết để tô màu xanh/đỏ ở Frontend
+        // Trả về chi tiết để FE tô màu
+        details: resultDetails.map(d => ({
+            questionId: d.questionId,
+            isCorrect: d.isCorrect,
+            userAnswer: d.userAnswer,
+            // Cần join lại questions gốc để lấy solution trả về cho FE hiển thị
+            correctAnswer: questions.find(q => q._id.equals(d.questionId)).answer,
+            solution: questions.find(q => q._id.equals(d.questionId)).solution
+        }))
     };
 };

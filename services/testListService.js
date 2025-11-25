@@ -1,6 +1,6 @@
 const Test = require('../models/Test');
 const { CreateTestDto } = require('../dtos/testList/CreateTestDto');
-
+const TestResult = require('../models/TestResult');
 /**
  * Create a new test
  * @param {CreateTestDto} dto
@@ -28,22 +28,43 @@ exports.createTest = async (dto, userInformation) => {
     }
 };
 
-exports.getListTests = async ({ page = 0, size = 10, userInformation }) => {
-    const filter = {};
+// Thay thế hàm getTestList hiện tại trong file Service của bạn
+// Loại bỏ 'req, res' và chỉ nhận destructuring object
+exports.getTestList = async ({ page, size, userInformation }) => {
 
-    // Lưu ý: Logic phân trang thường là skip(page * size) thay vì skip(page)
-    // Nếu page là số trang (0, 1, 2...), hãy sửa thành: .skip(page * size)
-    // Nếu page là số bản ghi cần bỏ qua (offset), giữ nguyên .skip(page)
+    // Khai báo lại userRole và userId từ userInformation
+    const userRole = userInformation.role;
+    const userId = userInformation.id;
 
-    let query = Test.find(filter)
-        .skip(page * size) // Sửa lại chuẩn logic phân trang (Trang 0 bỏ qua 0, Trang 1 bỏ qua 10...)
-        .limit(size)
-        .sort({ updatedAt: -1 });
+    // 1. Lấy tất cả bài thi
+    const tests = await Test.find().sort({ createdAt: -1 });
 
-    const tests = await query;
-    const total = await Test.countDocuments(filter);
-    return { tests, total };
-}
+    // Lấy tổng số lượng (để Controller có thể tính Pagination)
+    const total = await Test.countDocuments({});
+
+    // 2. Xử lý logic cho Admin (trả về danh sách thô)
+    if (userRole === 'admin') {
+        // Chỉ trả về data và total
+        return { tests, total };
+    }
+
+    // 3. Nếu là Student: Kiểm tra trạng thái đã làm
+    const takenResults = await TestResult.find({ user: userId }).select('test score');
+
+    // Map lại danh sách test để thêm field 'isTaken' và 'score'
+    const testsWithStatus = tests.map(test => {
+        const result = takenResults.find(r => r.test.toString() === test._id.toString());
+        return {
+            // Dùng .toObject() để đảm bảo có thể thêm các property mới như isTaken
+            ...test.toObject(),
+            isTaken: !!result,
+            score: result ? result.score : null
+        };
+    });
+
+    // Trả về object result đúng format Controller mong đợi
+    return { tests: testsWithStatus, total };
+};
 
 /**
  * Get test detail by ID
@@ -103,3 +124,82 @@ exports.deleteTest = async (id, userInformation) => {
 
     return deletedTest;
 }
+
+// ... (các hàm cũ create, get, update, delete)
+
+/**
+ * Lấy thống kê chi tiết cho một bài thi
+ */
+exports.getTestStatistics = async (testId) => {
+    // 1. Lấy tất cả kết quả của bài thi này
+    const results = await TestResult.find({ test: testId })
+        .populate('user', 'fullName email username') // Lấy thông tin học sinh
+        .sort({ score: -1 }); // Sắp xếp điểm từ cao xuống thấp
+
+    if (!results || results.length === 0) {
+        return {
+            totalAttempts: 0,
+            averageScore: 0,
+            highestScore: 0,
+            lowestScore: 0,
+            leaderboard: [],
+            tagAnalysis: [],
+            scoreDistribution: [0, 0, 0, 0, 0] // 0-2, 2-4, 4-6, 6-8, 8-10
+        };
+    }
+
+    // 2. Tính toán số liệu tổng quan
+    const totalAttempts = results.length;
+    const scores = results.map(r => r.score);
+    const highestScore = Math.max(...scores);
+    const lowestScore = Math.min(...scores);
+    const averageScore = (scores.reduce((a, b) => a + b, 0) / totalAttempts).toFixed(2);
+
+    // 3. Phân bố phổ điểm (0-2, 2-4, 4-6, 6-8, 8-10)
+    const scoreDistribution = [0, 0, 0, 0, 0];
+    scores.forEach(s => {
+        if (s < 2) scoreDistribution[0]++;
+        else if (s < 4) scoreDistribution[1]++;
+        else if (s < 6) scoreDistribution[2]++;
+        else if (s < 8) scoreDistribution[3]++;
+        else scoreDistribution[4]++;
+    });
+
+    // 4. Phân tích Tag (Tag nào hay bị làm sai nhất?)
+    const tagStats = {}; // { "Đại số": { total: 10, wrong: 5 } }
+
+    results.forEach(result => {
+        result.details.forEach(detail => {
+            // Duyệt qua từng tag của câu hỏi
+            if (detail.tags && detail.tags.length > 0) {
+                detail.tags.forEach(tagName => {
+                    if (!tagStats[tagName]) {
+                        tagStats[tagName] = { name: tagName, wrongCount: 0, totalAppear: 0 };
+                    }
+                    tagStats[tagName].totalAppear++;
+                    if (!detail.isCorrect) {
+                        tagStats[tagName].wrongCount++;
+                    }
+                });
+            }
+        });
+    });
+
+    // Chuyển object tagStats thành array và tính % sai
+    const tagAnalysis = Object.values(tagStats).map(t => ({
+        tag: t.name,
+        wrongCount: t.wrongCount,
+        total: t.totalAppear,
+        wrongRate: ((t.wrongCount / t.totalAppear) * 100).toFixed(1)
+    })).sort((a, b) => b.wrongRate - a.wrongRate); // Sắp xếp tag sai nhiều nhất lên đầu
+
+    return {
+        totalAttempts,
+        averageScore,
+        highestScore,
+        lowestScore,
+        scoreDistribution, // Mảng 5 phần tử
+        tagAnalysis: tagAnalysis.slice(0, 10), // Lấy top 10 tag sai nhiều nhất
+        leaderboard: results // Danh sách học sinh đã sort
+    };
+};
