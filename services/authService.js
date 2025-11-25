@@ -16,13 +16,15 @@ exports.registerUser = async (dto) => {
     const user = new User({
         username: dto.username,
         passwordHash: passwordHash,
-        gradeLevel: dto.gradeLevel
+        gradeLevel: dto.gradeLevel,
+        fullName: dto.fullName,
     });
     await user.save();
 
     return {
         id: user._id,
         username: user.username,
+        fullName: user.fullName,
     };
 };
 

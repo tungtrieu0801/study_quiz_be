@@ -1,8 +1,9 @@
 class RegisterUserDto {
-    constructor({ username, password, gradeLevel }) {
+    constructor({ username, password, gradeLevel, fullName }) {
         this.username = username?.trim();
-        this.password = password;
-        this.gradeLevel = gradeLevel;
+        this.password = password.trim();
+        this.gradeLevel = gradeLevel.trim();
+        this.fullName = fullName.trim();
     }
 
     validate() {
