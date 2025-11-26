@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const Question = require("../models/Question");
+const bcrypt = require('bcryptjs');
 
 exports.updateUser = async (dto) => {
     try {
@@ -9,7 +9,13 @@ exports.updateUser = async (dto) => {
             return { error: "User not found" };
         }
         if (dto.fullName !== undefined) user.fullName = dto.fullName;
+        if (dto.username !== undefined) user.username = dto.username;
+        if (dto.gradeLevel !== undefined) user.gradeLevel = dto.gradeLevel;
+        if (dto.password !== undefined) {
+            user.passwordHash = await bcrypt.hash(dto.password, 10);
+        }
         await user.save();
+        user.password = undefined;
         return user;
     } catch (e) {
         return { error: "Cannot update user" };
