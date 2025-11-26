@@ -179,3 +179,17 @@ exports.submitTest = async (submissionData, userInformation) => {
         }))
     };
 };
+
+/**
+ * Get list quesion by list id
+ * @param {Array<String>} ids - Array include list question id
+ * @param {Object} userInformation - User information
+ */
+exports.getQuestionsByIds = async (ids, userInformation) => {
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return [];
+    }
+    let query = Question.find({ _id: { $in: ids } });
+    const questions = await query;
+    return questions;
+};

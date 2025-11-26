@@ -102,3 +102,20 @@ exports.submitTest = async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 };
+
+exports.getQuestionsByIds = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        const userInformation = req.user;
+
+        const questions = await questionService.getQuestionsByIds(ids, userInformation);
+
+        res.status(200).json({
+            success: true,
+            count: questions.length,
+            data: questions
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
