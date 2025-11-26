@@ -37,9 +37,37 @@ exports.getStudents = async (page, size, gradeLevel, studentName) => {
     const students = await User.find(filter)
         .skip(page * size)
         .limit(size)
-        .sort({ updatedAt: -1 });
+        .collation({ locale: "vi", strength: 1 })
+        .sort({ firstName: 1, fullName: 1, id: 1 });
 
     const total = await User.countDocuments(filter);
 
     return { students, total };
+};
+
+
+exports.migrateFirstNames = async () => {
+    // Lấy toàn bộ user
+    const users = await User.find({});
+    let count = 0;
+
+    for (const user of users) {
+        if (user.fullName) {
+            // Logic tách tên
+            const parts = user.fullName.trim().split(/\s+/);
+            const newFirstName = parts[parts.length - 1];
+
+            // Chỉ update nếu chưa có hoặc khác biệt
+            if (user.firstName !== newFirstName) {
+                user.firstName = newFirstName;
+
+                // Lưu lại (sẽ kích hoạt pre-save hook nếu có, nhưng gán trực tiếp cho chắc)
+                await user.save();
+                count++;
+            }
+        }
+    }
+
+    // Trả về số lượng đã update cho Controller
+    return count;
 };

@@ -37,3 +37,30 @@ exports.getStudents = async (req, res) => {
         res.status(400).json({ success: false, error: e });
     }
 }
+
+// user.controller.js
+
+// controllers/user.controller.js
+
+exports.migrateFirstNames = async (req, res) => {
+    try {
+        // Gọi hàm xử lý logic bên service
+        const count = await userService.migrateFirstNames();
+
+        // Trả về kết quả thành công
+        return res.status(200).json({
+            status: "success",
+            message: "Migration completed successfully",
+            updatedCount: count
+        });
+
+    } catch (error) {
+        console.error("Migration Error:", error);
+        // Trả về lỗi server
+        return res.status(500).json({
+            status: "error",
+            message: "Migration failed",
+            error: error.message
+        });
+    }
+};
