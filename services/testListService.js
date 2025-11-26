@@ -1,6 +1,8 @@
 const Test = require('../models/Test');
+const User = require('../models/User');
 const { CreateTestDto } = require('../dtos/testList/CreateTestDto');
 const TestResult = require('../models/TestResult');
+const notificationService = require('../services/notificationService');
 /**
  * Create a new test
  * @param {CreateTestDto} dto
@@ -22,6 +24,28 @@ exports.createTest = async (dto, userInformation) => {
             updatedAt: dto.updatedAt,
         });
         await test.save();
+
+        // Create notification
+        try {
+            const students = await User.find({
+                role: 'student',
+            }).select('_id');
+            const notificationPromises = students.map(student => {
+                return notificationService.createNotification({
+                    recipient: student._id,
+                    sender: userInformation.id, // Admin gửi
+                    type: 'EXAM', // Loại thông báo là bài thi
+                    title: `Bài kiểm tra mới: ${dto.title}`,
+                    content: `Cô giáo vừa thêm bài kiểm tra 'mới cho khối ${dto.gradeLevel}. Thời gian làm bài: ${dto.duration} phút.`,
+                    data: { testId: test._id } // Gắn ID bài thi vào để FE click vào là mở ngay
+                });
+            });
+            await Promise.all(notificationPromises);
+            console.log(`Đã gửi thông báo bài thi mới cho ${students.length} học sinh.`);
+        } catch (e) {
+            console.error("Lỗi khi gửi thông báo bài thi mới:", error);
+        }
+
         return test;
     } else {
         throw new Error('Only admins can create tests');
