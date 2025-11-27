@@ -26,26 +26,26 @@ exports.createQuestion = async (dto, userInformation) => {
     }
 }
 
-exports.getQuestions = async ({ page = 0, size = 10, testId, userInformation }) => {
+exports.getQuestions = async ({ page = 1, size = 10, testId, userInformation }) => {
     const filter = {};
+    if (testId) filter.testIds = testId;
 
-    // Nếu có testId → lọc
-    if (testId) {
-        filter.testIds = testId;
-    }
+    // Đảm bảo page không nhỏ hơn 1
+    const currentPage = Math.max(1, page);
 
-    let query = Question.find(filter)
-        .skip(page * size)
+    // Công thức cho trang bắt đầu từ 1: (trang - 1) * số lượng
+    const skip = (currentPage - 1) * size;
+
+    const query = Question.find(filter)
+        .skip(skip)
         .limit(size)
         .sort({ updatedAt: -1 });
 
-    if ('admin' === userInformation.role) {
-        query = query.select('-answer'); // loại bỏ trường answer
-    }
-
-    const questions = await query;
-
-    const total = await Question.countDocuments(filter);
+    // Chạy song song query data và count tổng số bản ghi để tối ưu
+    const [questions, total] = await Promise.all([
+        query,
+        Question.countDocuments(filter)
+    ]);
 
     return { questions, total };
 };
