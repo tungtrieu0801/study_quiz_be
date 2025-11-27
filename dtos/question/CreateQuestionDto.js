@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
+
 class CreateQuestionDto {
-    constructor({ content, options, answer, tags, updatedAt, solution, gradeLevel, testIds }) {
+    constructor({type, content, options, answer, tags, updatedAt, solution, gradeLevel, testIds}) {
+        this.type = type || 'SINGLE_CHOICE';
         this.content = content;
         this.options = options;
         this.answer = answer;
@@ -18,9 +20,9 @@ class CreateQuestionDto {
         if (!Array.isArray(this.options) || this.options.length < 2) {
             throw new Error('Options must be an array with at least two items');
         }
-        if (!this.options.includes(this.answer)) {
-            throw new Error('Answer must be one of the options');
-        }
+        // if (!this.options.includes(this.answer)) {
+        //     throw new Error('Answer must be one of the options');
+        // }
         // Validate tags (OPTIONAL nhưng nên có)
         if (this.tags && !Array.isArray(this.tags)) {
             throw new Error('Tags must be an array of tag IDs');
@@ -36,4 +38,4 @@ class CreateQuestionDto {
     }
 }
 
-module.exports = { CreateQuestionDto };
+module.exports = {CreateQuestionDto};

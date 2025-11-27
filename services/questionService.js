@@ -1,29 +1,52 @@
 const Question = require('../models/Question');
 const TestResult = require('../models/TestResult')
+const QuestionFactory  = require('../patterns/QuestionFactory');
+
+// Helper function để so sánh đáp án (Chấm điểm)
+function checkAnswer(questionType, userAnswer, systemAnswer) {
+    if (questionType === 'MULTIPLE_SELECT') {
+        // So sánh 2 mảng: Phải có cùng độ dài và cùng phần tử
+        if (!Array.isArray(userAnswer) || !Array.isArray(systemAnswer)) return false;
+        if (userAnswer.length !== systemAnswer.length) return false;
+        const sortedUser = [...userAnswer].sort();
+        const sortedSystem = [...systemAnswer].sort();
+        return sortedUser.every((value, index) => value === sortedSystem[index]);
+    }
+    // Mặc định so sánh chuỗi (SINGLE_CHOICE)
+    return userAnswer === systemAnswer;
+}
+
 /**
  * Register new user
  * @param {CreateQuestionDto} dto
  * @param userInformation include userId and role
  */
 exports.createQuestion = async (dto, userInformation) => {
-    dto.validate();
-    const userRole = userInformation.role;
-    if ('admin' === userRole) {
-        const question = new Question({
-            content: dto.content,
-            options: dto.options,
-            answer: dto.answer,
-            updatedAt: new Date(dto.updatedAt),
-            tags: dto.tags,
-            solution: dto.solution,
-            gradeLevel: dto.gradeLevel,
-            testIds: dto.testIds,
-        })
-        await question.save();
-        return question;
-    } else {
-        return { error: 'Only admins can create questions' };
+    if (userInformation.role !== 'admin') {
+        throw new Error('Only admins can create questions');
     }
+
+    // Factory decide what type of question will be created.
+    const questionProduct = QuestionFactory.createQuestion(dto);
+
+    // Validate data for every question type
+    questionProduct.validate();
+
+    // Get data validated
+    const validData = questionProduct.getData();
+
+    const question = new Question({
+        ...validData,
+        solution: dto.solution,
+        gradeLevel: dto.gradeLevel,
+        updatedAt: new Date(),
+        // Các trường ref giữ nguyên
+        tags: dto.tags,
+        testIds: dto.testIds,
+    });
+
+    await question.save();
+    return question;
 }
 
 exports.getQuestions = async ({ page = 1, size = 10, testId, userInformation }) => {
@@ -110,40 +133,33 @@ exports.submitTest = async (submissionData, userInformation) => {
     const { testId, answers } = submissionData;
     const userId = userInformation.id;
 
-    // 1. Kiểm tra: Học sinh đã làm bài này chưa?
+    // ... (Giữ nguyên đoạn kiểm tra existingResult) ...
     const existingResult = await TestResult.findOne({ user: userId, test: testId });
     if (existingResult) {
         throw new Error("Bạn đã làm bài kiểm tra này rồi, không thể nộp lại.");
     }
 
-    // --- SỬA ĐỔI TỪ ĐÂY ---
-
-    // 2. Lấy TOÀN BỘ câu hỏi của bài thi này từ DB
-    // (Lưu ý: Bạn cần đảm bảo Model Question có trường testId,
-    // hoặc logic lấy danh sách câu hỏi phải khớp với cách bạn lưu DB)
     const questions = await Question.find({ testIds: testId });
-
     if (!questions || questions.length === 0) {
         throw new Error("Đề thi này chưa có câu hỏi.");
     }
 
     let correctCount = 0;
     const resultDetails = [];
-    const userAnswersMap = answers || {}; // Đảm bảo không bị null
+    const userAnswersMap = answers || {};
 
-    // 3. Chấm điểm
+    // CHẤM ĐIỂM
     questions.forEach(q => {
-        // Lấy đáp án user gửi lên, nếu không có thì là null/undefined
         const userAnswer = userAnswersMap[q._id.toString()];
 
-        // So sánh: Nếu user không trả lời (undefined) thì auto sai
-        const isCorrect = userAnswer === q.answer;
+        // SỬ DỤNG HELPER ĐỂ SO SÁNH (Vì giờ đáp án có thể là Array)
+        const isCorrect = checkAnswer(q.type, userAnswer, q.answer);
 
         if (isCorrect) correctCount++;
 
         resultDetails.push({
             questionId: q._id,
-            userAnswer: userAnswer || null, // Lưu null nếu không trả lời
+            userAnswer: userAnswer || null,
             isCorrect: isCorrect,
             tags: q.tags
         });
@@ -151,7 +167,6 @@ exports.submitTest = async (submissionData, userInformation) => {
 
     const score = parseFloat(((correctCount / questions.length) * 10).toFixed(2));
 
-    // 4. Lưu kết quả vào DB (BẮT BUỘC CHẠY KỂ CẢ KHI 0 ĐIỂM)
     const newResult = new TestResult({
         user: userId,
         test: testId,
@@ -163,7 +178,6 @@ exports.submitTest = async (submissionData, userInformation) => {
 
     await newResult.save();
 
-    // 5. Trả về kết quả
     return {
         _id: newResult._id,
         score,
@@ -173,7 +187,6 @@ exports.submitTest = async (submissionData, userInformation) => {
             questionId: d.questionId,
             isCorrect: d.isCorrect,
             userAnswer: d.userAnswer,
-            // Tìm lại thông tin câu hỏi để trả về solution
             correctAnswer: questions.find(q => q._id.equals(d.questionId)).answer,
             solution: questions.find(q => q._id.equals(d.questionId)).solution
         }))
