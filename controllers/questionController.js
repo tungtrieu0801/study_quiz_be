@@ -20,8 +20,8 @@ exports.createQuestion = async (req, res) => {
 
 exports.getQuestions = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 0;
-        const size = parseInt(req.query.size) || 10;
+        const page = parseInt(req.query.page);
+        const size = parseInt(req.query.size);
         const testId = req.query.testId;
         const userInformation = req.user;
 
