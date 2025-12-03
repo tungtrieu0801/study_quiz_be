@@ -18,7 +18,7 @@ exports.register = async (req, res) => {
 };
 
 
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
     try {
         const dto = new LoginUserDto(req.body);
         console.log(dto);
@@ -29,6 +29,6 @@ exports.login = async (req, res) => {
             data: result
         });
     } catch (err) {
-        res.status(401).json({ success: false, message: err.message });
+        next(err);
     }
 };

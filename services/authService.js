@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
+const AppError = require('../utils/AppError');
 /**
  * Register new user
  * @param {RegisterUserDto} dto
@@ -37,12 +37,12 @@ exports.loginUser = async (dto) => {
     dto.validate();
 
     const user = await User.findOne({ username: dto.username });
-    if (!user) throw new Error('Invalid credentials');
+    if (!user) throw new AppError('Nhập sai thông tin tài khoản', 401);
 
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!isMatch) throw new Error('Invalid credentials');
+    if (!isMatch) throw new AppError('Mật khẩu không chính xác', 401);
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '3s' });
 
     return {
         token,
