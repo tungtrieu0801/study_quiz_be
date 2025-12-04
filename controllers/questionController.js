@@ -1,11 +1,21 @@
 const questionService = require("../services/questionService");
-const { CreateQuestionDto } = require("../dtos/question/CreateQuestionDto");
+const {CreateQuestionDto} = require("../dtos/question/CreateQuestionDto");
 const {UpdateQuestionDto} = require("../dtos/question/UpdateQuestionDto");
-
+const {uploadToR2} = require("../services/r2");
 exports.createQuestion = async (req, res) => {
-    const questionDto = new CreateQuestionDto(req.body);
-    const userInformation = req.user;
     try {
+        let imageUrl = null;
+        if (req.file) {
+            const uploadResult = await uploadToR2(req.file);
+            imageUrl = uploadResult.location || uploadResult.url;
+        }
+        const questionData = {
+            ...req.body,
+            imageUrl: imageUrl
+        }
+        const questionDto = new CreateQuestionDto(questionData);
+        const userInformation = req.user;
+
         const question = await questionService.createQuestion(questionDto, userInformation);
         res.status(201).json({
             success: true,
@@ -14,7 +24,7 @@ exports.createQuestion = async (req, res) => {
         })
     } catch (err) {
         const status = err.message.includes('Only admins') ? 403 : 500;
-        res.status(status).json({ success: false, message: err.message });
+        res.status(status).json({success: false, message: err.message});
     }
 }
 
@@ -25,7 +35,7 @@ exports.getQuestions = async (req, res) => {
         const testId = req.query.testId;
         const userInformation = req.user;
 
-        const result = await questionService.getQuestions({ page, size, testId, userInformation });
+        const result = await questionService.getQuestions({page, size, testId, userInformation});
 
         res.json({
             success: true,
@@ -35,13 +45,13 @@ exports.getQuestions = async (req, res) => {
             size,
         });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({success: false, message: err.message});
     }
 };
 
 exports.updateQuestion = async (req, res) => {
     try {
-        const { id } = req.params; // Lấy ID câu hỏi từ URL
+        const {id} = req.params; // Lấy ID câu hỏi từ URL
         const questionDto = new UpdateQuestionDto(req.body);
         const userInformation = req.user;
 
@@ -57,13 +67,13 @@ exports.updateQuestion = async (req, res) => {
         if (err.message.includes('Only admins')) status = 403;
         if (err.message.includes('not found')) status = 404;
 
-        res.status(status).json({ success: false, message: err.message });
+        res.status(status).json({success: false, message: err.message});
     }
 }
 
 exports.deleteQuestion = async (req, res) => {
     try {
-        const { id } = req.params; // Lấy ID từ URL (ví dụ: /questions/:id)
+        const {id} = req.params; // Lấy ID từ URL (ví dụ: /questions/:id)
 
         // Giả sử middleware xác thực đã gán thông tin user vào req.user
         // req.user phải chứa { role: 'admin', ... }
@@ -79,7 +89,7 @@ exports.deleteQuestion = async (req, res) => {
     } catch (err) {
         // Có thể check err.message để trả về 403 hoặc 404 tùy ý,
         // ở đây giữ nguyên 500 như mẫu của bạn
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({success: false, message: err.message});
     }
 }
 
@@ -97,15 +107,15 @@ exports.submitTest = async (req, res) => {
     } catch (err) {
         // Nếu lỗi do trùng lặp (đã làm rồi)
         if (err.code === 11000 || err.message.includes("đã làm bài")) {
-            return res.status(400).json({ success: false, message: "Bạn đã hoàn thành bài thi này rồi." });
+            return res.status(400).json({success: false, message: "Bạn đã hoàn thành bài thi này rồi."});
         }
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({success: false, message: err.message});
     }
 };
 
 exports.getQuestionsByIds = async (req, res) => {
     try {
-        const { ids } = req.body;
+        const {ids} = req.body;
         const userInformation = req.user;
 
         const questions = await questionService.getQuestionsByIds(ids, userInformation);
@@ -116,6 +126,6 @@ exports.getQuestionsByIds = async (req, res) => {
             data: questions
         });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({success: false, message: err.message});
     }
 };

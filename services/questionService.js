@@ -40,7 +40,7 @@ exports.createQuestion = async (dto, userInformation) => {
         solution: dto.solution,
         gradeLevel: dto.gradeLevel,
         updatedAt: new Date(),
-        // Các trường ref giữ nguyên
+        imageUrl: dto.imageUrl,
         tags: dto.tags,
         testIds: dto.testIds,
     });
