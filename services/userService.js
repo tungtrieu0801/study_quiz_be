@@ -22,9 +22,11 @@ exports.updateUser = async (dto) => {
     }
 }
 
-exports.getStudents = async (page, size, gradeLevel, studentName) => {
-
-    const filter = { role: "student" };
+exports.getListUser = async (page, size, gradeLevel, studentName, role) => {
+    const filter = {};
+    if (role !== undefined && role !== null && role !== "") {
+        filter.role = role;
+    }
 
     if (gradeLevel !== undefined && gradeLevel !== null && gradeLevel !== "") {
         filter.gradeLevel = gradeLevel;

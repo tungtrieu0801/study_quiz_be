@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { updateUser, getStudents, migrateFirstNames} = require('../controllers/userController');
+const { updateUser, getListUser, migrateFirstNames} = require('../controllers/userController');
 
-router.get('/', getStudents);
+router.get('/', getListUser);
 router.put('/', updateUser);
 router.post('/migrate-names', migrateFirstNames);
 module.exports = router;
