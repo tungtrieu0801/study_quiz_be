@@ -20,14 +20,15 @@ exports.updateUser = async (req, res) => {
     }
 }
 
-exports.getStudents = async (req, res) => {
+exports.getListUser = async (req, res) => {
     const userInformation = req.user;
-    const page = parseInt(req.query.page) || 0;
-    const size = parseInt(req.query.size) || 10;
+    const page = parseInt(req.query.page);
+    const size = parseInt(req.query.size);
     const gradeLevel = req.query.gradeLevel;
     const studentName = req.query.studentName;
+    const role = req.query.role;
     try {
-        const listStudent = await userService.getStudents(page, size, gradeLevel, studentName);
+        const listStudent = await userService.getListUser(page, size, gradeLevel, studentName, role);
         res.status(200).json({
             status: "success",
             message: "User Information",
