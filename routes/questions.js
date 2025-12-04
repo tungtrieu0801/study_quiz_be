@@ -8,9 +8,12 @@ const {
     submitTest,
     getQuestionsByIds
 } = require('../controllers/questionController');
+const multer = require("multer");
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Router for create quesion
-router.post('/', createQuestion);
+router.post('/', upload.single("file"), createQuestion);
 
 // Router for get list question
 router.get('/', getQuestions);
