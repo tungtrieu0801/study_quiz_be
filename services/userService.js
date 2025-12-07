@@ -22,7 +22,7 @@ exports.updateUser = async (dto) => {
     }
 }
 
-exports.getListUser = async (page, size, gradeLevel, studentName, role) => {
+exports.getListUser = async (userInformation, page, size, gradeLevel, studentName, role, teacherId) => {
     const filter = {};
     if (role !== undefined && role !== null && role !== "") {
         filter.role = role;
@@ -36,12 +36,16 @@ exports.getListUser = async (page, size, gradeLevel, studentName, role) => {
         filter.fullName = { $regex: studentName, $options: "i" };
     }
 
+    if (teacherId && teacherId.trim() !== "") {
+        filter.teacherId = {
+            $in: [teacherId.trim()]
+        };
+    }
     const students = await User.find(filter)
         .skip(page * size)
         .limit(size)
         .collation({ locale: "vi", strength: 1 })
         .sort({ firstName: 1, fullName: 1, id: 1 });
-
     const total = await User.countDocuments(filter);
 
     return { students, total };

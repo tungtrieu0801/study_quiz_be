@@ -11,7 +11,7 @@ const notificationService = require('../services/notificationService');
 exports.createTest = async (dto, userInformation) => {
     dto.validate();
     const userRole = userInformation.role;
-    if ('admin' === userRole) {
+    if ('teacher' === userRole) {
         const test = new Test({
             title: dto.title,
             description: dto.description,
@@ -22,6 +22,7 @@ exports.createTest = async (dto, userInformation) => {
             tags: dto.tags,
             createdAt: dto.createdAt,
             updatedAt: dto.updatedAt,
+            teacherId: dto.teacherId,
         });
         await test.save();
 
@@ -51,55 +52,60 @@ exports.createTest = async (dto, userInformation) => {
         throw new Error('Only admins can create tests');
     }
 };
-
-// Thay thế hàm getTestList hiện tại trong file Service của bạn
-// Loại bỏ 'req, res' và chỉ nhận destructuring object
 exports.getTestList = async ({ page, size, userInformation }) => {
-    // Chuyển đổi page/size sang số (đề phòng gửi lên dạng string)
-    const pageNum = parseInt(page) || 1;
-    const sizeNum = parseInt(size) || 10;
+    const pageNum = parseInt(page);
+    const sizeNum = parseInt(size);
     const skip = (pageNum - 1) * sizeNum;
 
     const userRole = userInformation.role;
     const userId = userInformation.id;
 
-    // 1. Đếm tổng số lượng trước (để FE làm phân trang)
-    const total = await Test.countDocuments({});
+    const queryCondition = {};
+    if (userRole === "teacher") {
+        queryCondition.teacherId = userId;
+    } else if (userRole === "student") {
+        queryCondition.teacherId = userInformation.teacherId;
+    }
 
-    // 2. Query DB có Phân Trang (Thêm skip và limit)
-    const tests = await Test.find()
+    // ===== 2. Đếm tổng cho FE =====
+    const total = await Test.countDocuments(queryCondition);
+
+    // ===== 3. Query danh sách test theo filter + phân trang =====
+    const tests = await Test.find(queryCondition)
         .sort({ createdAt: -1 })
-        .skip(skip)         // <--- BỔ SUNG
-        .limit(sizeNum);    // <--- BỔ SUNG
+        .skip(skip)
+        .limit(sizeNum);
 
-    // 3. Nếu là Admin: Trả về luôn
-    if (userRole === 'admin') {
+    // ===== 4. Nếu admin → trả về luôn =====
+    if (userRole === "admin") {
         return { tests, total };
     }
 
-    // 4. Nếu là Student: Kiểm tra trạng thái đã làm
-    // Lấy danh sách ID của các bài test vừa query được ở trang này
-    const testIdsOnPage = tests.map(t => t._id);
+    // ===== 5. Nếu student → bổ sung trạng thái đã làm
+    if (userRole === "student") {
+        const testIdsOnPage = tests.map(t => t._id);
 
-    // Chỉ tìm kết quả thi của USER HIỆN TẠI trong phạm vi CÁC BÀI TEST CỦA TRANG NÀY
-    // (Tối ưu hơn việc query toàn bộ TestResult của user)
-    const takenResults = await TestResult.find({
-        user: userId,
-        test: { $in: testIdsOnPage }
-    }).select('test score');
+        const takenResults = await TestResult.find({
+            user: userId,
+            test: { $in: testIdsOnPage }
+        }).select("test score");
 
-    // Map lại danh sách
-    const testsWithStatus = tests.map(test => {
-        const result = takenResults.find(r => r.test.toString() === test._id.toString());
-        return {
-            ...test.toObject(),
-            isTaken: !!result,
-            score: result ? result.score : null
-        };
-    });
+        const testsWithStatus = tests.map(test => {
+            const result = takenResults.find(r => r.test.toString() === test._id.toString());
+            return {
+                ...test.toObject(),
+                isTaken: !!result,
+                score: result ? result.score : null
+            };
+        });
 
-    return { tests: testsWithStatus, total };
+        return { tests: testsWithStatus, total };
+    }
+
+    // ===== 6. Teacher → trả danh sách test của giáo viên =====
+    return { tests, total };
 };
+
 /**
  * Get test detail by ID
  * @param {string} id

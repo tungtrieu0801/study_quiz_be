@@ -21,7 +21,8 @@ const QuestionSchema = new mongoose.Schema({
     solution: { type: String },
     gradeLevel: { type: String, trim: true },
     testIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Test' }],
-    imageUrl: { type: String }
+    imageUrl: { type: String },
+    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true }
 });
 
 module.exports = mongoose.model('Question', QuestionSchema);

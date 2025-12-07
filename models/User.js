@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
     fullName: { type: String, trim: true },
     gradeLevel: { type: String, trim: true },
     firstName: { type: String, trim: true },
-    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    teacherId: { type: String },
 });
 
 UserSchema.methods.comparePassword = function(password) {

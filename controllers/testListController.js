@@ -6,6 +6,7 @@ exports.createTest = async (req, res) => {
     const testDto = new CreateTestDto(req.body);
     const userInformation = req.user;
     try {
+        testDto.teacherId = userInformation.id;
         const newTest = await testListService.createTest(testDto, userInformation);
         res.status(201).json({
             success: true,
@@ -21,8 +22,8 @@ exports.createTest = async (req, res) => {
 // 2. GET LIST
 exports.getListTests = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 0;
-        const size = parseInt(req.query.size) || 10;
+        const page = parseInt(req.query.page);
+        const size = parseInt(req.query.size);
         const userInformation = req.user;
 
         const result = await testListService.getTestList({ page, size, userInformation });

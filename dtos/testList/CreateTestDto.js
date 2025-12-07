@@ -1,5 +1,5 @@
 class CreateTestDto {
-    constructor({ title, description, questions, createdBy, duration, gradeLevel, tags, createdAt, updatedAt }) {
+    constructor({ title, description, questions, createdBy, duration, gradeLevel, tags, createdAt, updatedAt, teacherId }) {
         this.title = title;
         this.description = description;
         this.questions = questions || [];
@@ -9,6 +9,7 @@ class CreateTestDto {
         this.tags = tags || [];
         this.createdAt = createdAt || new Date();
         this.updatedAt = updatedAt || new Date();
+        this.teacherId = teacherId;
     }
 
     validate() {

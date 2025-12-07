@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 class CreateQuestionDto {
-    constructor({type, content, options, answer, tags, updatedAt, solution, gradeLevel, testIds, imageUrl}) {
+    constructor({type, content, options, answer, tags, updatedAt, solution, gradeLevel, testIds, imageUrl, teacherId}) {
         this.type = type || 'SINGLE_CHOICE';
         this.content = content;
         this.options = options;
@@ -12,6 +12,7 @@ class CreateQuestionDto {
         this.gradeLevel = gradeLevel;
         this.testIds = testIds;
         this.imageUrl = imageUrl;
+        this.teacherId = teacherId;
     }
 
     validate() {

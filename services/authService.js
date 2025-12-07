@@ -18,6 +18,7 @@ exports.registerUser = async (dto) => {
         passwordHash: passwordHash,
         gradeLevel: dto.gradeLevel,
         fullName: dto.fullName,
+        teacherId: dto.teacherId,
     });
     await user.save();
 
@@ -37,19 +38,29 @@ exports.loginUser = async (dto) => {
     dto.validate();
 
     const user = await User.findOne({ username: dto.username });
+    console.log(user)
     if (!user) throw new AppError('Nhập sai thông tin tài khoản', 401);
 
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isMatch) throw new AppError('Mật khẩu không chính xác', 401);
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign(
+        {
+            id: user._id,
+            role: user.role,
+            teacherId: user.role === 'student' ? user.teacherId : undefined,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '30d' }
+    );
 
     return {
         token,
         user: {
             id: user._id,
             fullName: user.fullName !== undefined ? user.fullName : user.username,
-            role: user.role
+            role: user.role,
+            teacherId: user.role === "student" ? user.teacherId : undefined,
         }
     };
 };

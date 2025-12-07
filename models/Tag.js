@@ -5,6 +5,7 @@ const TagSchema = new mongoose.Schema({
     description: { type: String, trim: true },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
 module.exports = mongoose.model('Tag', TagSchema);

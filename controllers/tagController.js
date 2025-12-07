@@ -25,11 +25,11 @@ exports.createTag = async (req, res) => {
 
 exports.getAllTags = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 0;
-        const size = parseInt(req.query.size) || 10;
+        const page = parseInt(req.query.page);
+        const size = parseInt(req.query.size);
         const tagName = req.query.tagName;
-
-        const result = await tagService.getAllTags(page, size, tagName);
+        const userInformation = req.user;
+        const result = await tagService.getAllTags(page, size, tagName, userInformation);
 
         res.json({
             success: true, // Thống nhất dùng success: true/false

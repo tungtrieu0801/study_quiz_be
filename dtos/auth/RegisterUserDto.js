@@ -1,14 +1,16 @@
 class RegisterUserDto {
-    constructor({ username, password, gradeLevel, fullName }) {
-        this.username = username?.trim();
-        this.password = password.trim();
-        this.gradeLevel = gradeLevel.trim();
-        this.fullName = fullName.trim();
+    constructor({ username, password, gradeLevel, fullName, teacherId, role }) {
+        this.username = username;
+        this.password = password;
+        this.gradeLevel = gradeLevel;
+        this.fullName = fullName;
+        this.teacherId = teacherId;
+        this.role = role;
     }
 
     validate() {
-        if (!this.username || !this.password || !this.gradeLevel) {
-            throw new Error('Username, password, grade are required');
+        if (!this.username || !this.password) {
+            throw new Error('Username, password are required');
         }
 
     }

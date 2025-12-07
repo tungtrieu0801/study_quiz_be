@@ -1,26 +1,37 @@
 const Tag = require('../models/Tag');
 const Question = require('../models/Question');
-
+/**
+ * Register new user
+ * @param {CreateTagDto} dto
+ */
 exports.createTag = async (dto, userInformation) => {
     // Validate dữ liệu
     if (dto.validate) dto.validate();
 
     // Check trùng tên
-    const tagExists = await Tag.findOne({ name: dto.name });
+    const tagExists = await Tag.findOne({
+        name: dto.name,
+        createdBy: userInformation.id
+    });
     if (tagExists) return { error: 'Tag name already exists' };
 
     const tag = new Tag({
         name: dto.name,
-        description: dto.description
+        description: dto.description,
+        createdBy: userInformation.id
     });
 
     await tag.save();
     return tag;
 };
 
-exports.getAllTags = async (page, size, tagName) => {
+exports.getAllTags = async (page, size, tagName, userInformation) => {
     const filter = {};
-    // Tìm kiếm gần đúng (Regex) cho tiện dụng, hoặc tìm chính xác tùy bạn
+    if (userInformation.role === 'teacher') {
+        filter.createdBy = userInformation.id;
+    } else if (userInformation.role === 'student') {
+        filter.createdBy = userInformation.teacherId;
+    }
     if (tagName !== undefined && tagName.trim() !== "") {
         // Sử dụng regex để tìm kiếm không phân biệt hoa thường và tìm gần đúng
         filter.name = { $regex: tagName.trim(), $options: 'i' };

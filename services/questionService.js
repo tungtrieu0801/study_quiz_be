@@ -22,7 +22,7 @@ function checkAnswer(questionType, userAnswer, systemAnswer) {
  * @param userInformation include userId and role
  */
 exports.createQuestion = async (dto, userInformation) => {
-    if (userInformation.role !== 'admin') {
+    if (userInformation.role !== 'teacher') {
         throw new Error('Only admins can create questions');
     }
 
@@ -43,6 +43,7 @@ exports.createQuestion = async (dto, userInformation) => {
         imageUrl: dto.imageUrl,
         tags: dto.tags,
         testIds: dto.testIds,
+        teacherId: userInformation.id,
     });
 
     await question.save();
@@ -51,6 +52,11 @@ exports.createQuestion = async (dto, userInformation) => {
 
 exports.getQuestions = async ({ page = 1, size = 10, testId, userInformation }) => {
     const filter = {};
+    if (userInformation.role === 'student') {
+        filter.teacherId = userInformation.teacherId;
+    } else if (userInformation.role === 'teacher') {
+        filter.teacherId = userInformation.id;
+    }
     if (testId) filter.testIds = testId;
 
     // Đảm bảo page không nhỏ hơn 1
@@ -78,8 +84,8 @@ exports.updateQuestion = async (id, dto, userInformation) => {
     dto.validate();
 
     // 2. Kiểm tra quyền Admin
-    if (userInformation.role !== 'admin') {
-        throw new Error('Only admins can update questions');
+    if (userInformation.role !== 'teacher') {
+        throw new Error('Only teacher can update questions');
     }
 
     // 3. Tạo object update (chỉ lấy các trường có dữ liệu)
