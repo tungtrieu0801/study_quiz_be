@@ -49,7 +49,7 @@ exports.createTest = async (dto, userInformation) => {
 
         return test;
     } else {
-        throw new Error('Only admins can create tests');
+        throw new Error('Only teacher can create tests');
     }
 };
 exports.getTestList = async ({ page, size, userInformation }) => {
@@ -122,9 +122,9 @@ exports.getTestDetail = async (id) => {
  * @param {object} userInformation
  */
 exports.updateTest = async (id, updateData, userInformation) => {
-    // 1. Check quyền Admin
-    if (userInformation.role !== 'admin') {
-        throw new Error('Only admins can update tests');
+    // 1. Check quyền Teacher
+    if (userInformation.role !== 'teacher') {
+        throw new Error('Only teacher can update tests');
     }
 
     // 2. Cập nhật thời gian update
@@ -151,8 +151,8 @@ exports.updateTest = async (id, updateData, userInformation) => {
  */
 exports.deleteTest = async (id, userInformation) => {
     // 1. Check quyền Admin
-    if (userInformation.role !== 'admin') {
-        throw new Error('Only admins can delete tests');
+    if (userInformation.role !== 'teacher') {
+        throw new Error('Only teacher can delete tests');
     }
 
     // 2. Thực hiện xóa

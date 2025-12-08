@@ -23,7 +23,7 @@ exports.createQuestion = async (req, res) => {
             data: question
         })
     } catch (err) {
-        const status = err.message.includes('Only admins') ? 403 : 500;
+        const status = err.message.includes('Only teacher') ? 403 : 500;
         res.status(status).json({success: false, message: err.message});
     }
 }

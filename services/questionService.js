@@ -23,7 +23,7 @@ function checkAnswer(questionType, userAnswer, systemAnswer) {
  */
 exports.createQuestion = async (dto, userInformation) => {
     if (userInformation.role !== 'teacher') {
-        throw new Error('Only admins can create questions');
+        throw new Error('Only teacher can create questions');
     }
 
     // Factory decide what type of question will be created.
@@ -120,8 +120,8 @@ exports.updateQuestion = async (id, dto, userInformation) => {
 // Service: Xử lý logic xóa
 exports.deleteQuestion = async (id, userInformation) => {
     // 1. Kiểm tra quyền Admin (tương tự như create/update)
-    if (userInformation.role !== 'admin') {
-        throw new Error('Only admins can delete questions');
+    if (userInformation.role !== 'teacher') {
+        throw new Error('Only teacher can delete questions');
     }
 
     // 2. Tìm và xóa câu hỏi theo ID
