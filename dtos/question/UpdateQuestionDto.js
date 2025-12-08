@@ -7,6 +7,7 @@ class UpdateQuestionDto {
         this.solution = data.solution;
         this.gradeLevel = data.gradeLevel;
         this.testIds = data.testIds;
+        this.imageUrl = data.imageUrl;
     }
 
     validate() {

@@ -19,7 +19,7 @@ router.post('/', upload.single("file"), createQuestion);
 router.get('/', getQuestions);
 
 // Router for update quesion by id
-router.put('/:id', updateQuestion);
+router.put('/:id', upload.single('file'), updateQuestion);
 
 // Router for delete quesion by id
 router.delete('/:id', deleteQuestion);

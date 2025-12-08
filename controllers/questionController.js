@@ -28,6 +28,42 @@ exports.createQuestion = async (req, res) => {
     }
 }
 
+exports.updateQuestion = async (req, res) => {
+    try {
+        const {id} = req.params;
+        const userInformation = req.user;
+
+        let imageUrl = null;
+        if (req.file) {
+            const uploadResult = await uploadToR2(req.file);
+            imageUrl = uploadResult.location || uploadResult.url;
+        }
+
+        const updateData = {
+            ...req.body,
+        }
+        if (imageUrl) updateData.imageUrl = imageUrl;
+        const questionDto = new UpdateQuestionDto(updateData);
+        const updatedQuestion = await questionService.updateQuestion(
+            id,
+            questionDto,
+            userInformation
+        )
+
+        res.json({
+            success: true,
+            message: 'Question updated successfully',
+            data: updatedQuestion
+        });
+    } catch (err) {
+        let status = 500;
+        if (err.message.includes('Only admins')) status = 403;
+        if (err.message.includes('not found')) status = 404;
+
+        res.status(status).json({success: false, message: err.message});
+    }
+}
+
 exports.getQuestions = async (req, res) => {
     try {
         const page = parseInt(req.query.page);
@@ -48,28 +84,6 @@ exports.getQuestions = async (req, res) => {
         res.status(500).json({success: false, message: err.message});
     }
 };
-
-exports.updateQuestion = async (req, res) => {
-    try {
-        const {id} = req.params; // Lấy ID câu hỏi từ URL
-        const questionDto = new UpdateQuestionDto(req.body);
-        const userInformation = req.user;
-
-        const updatedQuestion = await questionService.updateQuestion(id, questionDto, userInformation);
-
-        res.json({
-            success: true,
-            message: 'Question updated successfully',
-            data: updatedQuestion
-        });
-    } catch (err) {
-        let status = 500;
-        if (err.message.includes('Only admins')) status = 403;
-        if (err.message.includes('not found')) status = 404;
-
-        res.status(status).json({success: false, message: err.message});
-    }
-}
 
 exports.deleteQuestion = async (req, res) => {
     try {

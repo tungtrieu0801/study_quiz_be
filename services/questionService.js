@@ -79,6 +79,11 @@ exports.getQuestions = async ({ page = 1, size = 10, testId, userInformation }) 
     return { questions, total };
 };
 
+/**
+ * Update question
+ * @param {UpdateQuestionDto} dto
+ * @param userInformation include userId and role
+ */
 exports.updateQuestion = async (id, dto, userInformation) => {
     // 1. Validate dữ liệu đầu vào
     dto.validate();
@@ -87,6 +92,9 @@ exports.updateQuestion = async (id, dto, userInformation) => {
     if (userInformation.role !== 'teacher') {
         throw new Error('Only teacher can update questions');
     }
+
+    const oldQuestion = await Question.findById(id);
+    if (!oldQuestion) throw new Error('Question not found');
 
     // 3. Tạo object update (chỉ lấy các trường có dữ liệu)
     const updateData = {};
@@ -97,19 +105,15 @@ exports.updateQuestion = async (id, dto, userInformation) => {
     if (dto.solution !== undefined) updateData.solution = dto.solution;
     if (dto.gradeLevel !== undefined) updateData.gradeLevel = dto.gradeLevel;
     if (dto.testIds !== undefined) updateData.testIds = dto.testIds;
-
-    // Luôn cập nhật thời gian sửa đổi
+    if(dto.imageUrl !== undefined) {
+        updateData.imageUrl = dto.imageUrl;
+    }
     updateData.updatedAt = new Date();
-
-    // 4. Thực hiện update
-    // { new: true } trả về document sau khi đã update
-    // { runValidators: true } để mongoose kiểm tra lại schema
     const updatedQuestion = await Question.findByIdAndUpdate(id, updateData, {
         new: true,
         runValidators: true
     });
 
-    // 5. Kiểm tra xem câu hỏi có tồn tại không
     if (!updatedQuestion) {
         throw new Error('Question not found');
     }
