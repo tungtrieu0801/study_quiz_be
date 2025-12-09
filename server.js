@@ -9,6 +9,7 @@ const tagRoutes = require('./routes/tags');
 const testListRoutes = require('./routes/testList');
 const notificationRouter = require('./routes/notification');
 const r2Routes = require('./routes/r2');
+const airportRoutes = require('./routes/ai');
 dotenv.config();
 
 const app = express();
@@ -25,6 +26,7 @@ app.use('/api/tag', authMiddleware, tagRoutes);
 app.use('/api/testList', authMiddleware, testListRoutes);
 app.use('/api/notifications', authMiddleware, notificationRouter)
 app.use('/api/r2', authMiddleware, r2Routes);
+app.use('/api/ai', airportRoutes);
 
 const startServer = async () => {
     await connectDB();
