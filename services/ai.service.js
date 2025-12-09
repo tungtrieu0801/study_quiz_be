@@ -7,57 +7,57 @@ const groq = new Groq({
 
 /**
  * Generate AI Text as strict JSON
- * @param {string} prompt
+ * @param {string} prompt - yêu cầu tạo câu hỏi
+ * @param {number} count - số lượng câu hỏi (default: 10)
  */
-exports.generateAIText = async (prompt) => {
-    if (!prompt) {
-        throw new AppError("prompt is required", 400);
+exports.generateAIText = async (prompt, count = 10) => {
+    if (!prompt) throw new AppError("prompt is required", 400);
+
+    // Nếu user không truyền hoặc truyền linh tinh → mặc định 10
+    if (![10, 15, 20].includes(count)) {
+        count = 10;
     }
 
     const strictPrompt = `
-        You must ALWAYS return ONLY valid JSON.
-        Do NOT include markdown.
-        Do NOT include code fences.
-        Do NOT escape apostrophes or quotation marks.
-        Output MUST be a pure JSON array of 10 questions.
-        
-        Each item MUST follow:
+        Bạn phải luôn trả về DUY NHẤT JSON hợp lệ.
+        KHÔNG dùng markdown.
+        KHÔNG dùng code block.
+        Không được escape ký tự hoặc dùng dấu \\.
+
+        Trả về một mảng JSON gồm đúng ${count} câu hỏi.
+
+        Mỗi object phải có đúng cấu trúc sau:
+
         {
-          "question": "string",
-          "options": {
-            "A": "string",
-            "B": "string",
-            "C": "string",
-            "D": "string"
-          },
-          "answer": "A" | "B" | "C" | "D"
+          "content": "string",              
+          "options": ["A", "B", "C", "D"],  
+          "answer": "A",                   
+          "solution": "string"              
         }
-        
-        Generate 10 questions based on this request:
+
+        Quy tắc:
+        - Toàn bộ nội dung phải bằng tiếng Việt.
+        - Câu hỏi loại SINGLE_CHOICE.
+        - Không thêm bất kỳ trường nào khác.
+        - Đáp án phải khớp 1 trong các option.
+        - "solution" phải giải thích chi tiết tại sao đáp án đúng.
+
+        Hãy tạo ${count} câu hỏi dựa trên yêu cầu sau:
         ${prompt}
-        `;
+    `;
+
     try {
         const completion = await groq.chat.completions.create({
             model: "openai/gpt-oss-120b",
-            messages: [{role: "system", content: "Return ONLY valid JSON with no markdown."}, {
-                role: "user",
-                content: strictPrompt
-            },],
+            messages: [
+                { role: "system", content: "Return ONLY valid JSON. No markdown." },
+                { role: "user", content: strictPrompt }
+            ],
             temperature: 0.4,
-            max_tokens: 2000,
+            max_tokens: 3000,
         });
 
-        // Parse JSON returned from API
         let parsed = JSON.parse(completion.choices[0].message.content);
-
-        // Clean escape characters (backslash) if AI still added them
-        parsed = parsed.map(q => {
-            q.question = q.question.replace(/\\'/g, "'");
-            for (let key in q.options) {
-                q.options[key] = q.options[key].replace(/\\'/g, "'");
-            }
-            return q;
-        });
 
         return parsed;
 

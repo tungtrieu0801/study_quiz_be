@@ -2,9 +2,9 @@ const aiService = require("../services/ai.service");
 
 exports.generate = async (req, res, next) => {
     try {
-        const { prompt } = req.body;
+        const { prompt, count } = req.body;
 
-        const output = await aiService.generateAIText(prompt);
+        const output = await aiService.generateAIText(prompt, count);
 
         res.json({
             success: true,
@@ -13,6 +13,6 @@ exports.generate = async (req, res, next) => {
         });
 
     } catch (err) {
-        next(err); // giống auth: cho middleware xử lý lỗi
+        next(err);
     }
 };
