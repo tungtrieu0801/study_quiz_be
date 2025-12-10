@@ -19,30 +19,33 @@ exports.generateAIText = async (prompt, count = 10) => {
     }
 
     const strictPrompt = `
-        Bạn phải luôn trả về DUY NHẤT JSON hợp lệ.
+        Bạn phải luôn trả về DUY NHẤT một JSON hợp lệ.
         KHÔNG dùng markdown.
         KHÔNG dùng code block.
-        Không được escape ký tự hoặc dùng dấu \\.
-
-        Trả về một mảng JSON gồm đúng ${count} câu hỏi.
-
-        Mỗi object phải có đúng cấu trúc sau:
-
+        KHÔNG escape ký tự hoặc dùng dấu \\.
+        
+        Kết quả trả về phải là một mảng JSON gồm đúng ${count} phần tử.
+        
+        Mỗi phần tử phải là một object với cấu trúc CHÍNH XÁC như sau (không được thêm hoặc bớt trường):
         {
-          "content": "string",              
-          "options": ["A", "B", "C", "D"],  
-          "answer": "A",                   
-          "solution": "string"              
+          "content": "string",
+          "options": ["string", "string", "string", "string"],
+          "answer": "string",
+          "solution": "string"
         }
-
-        Quy tắc:
-        - Toàn bộ nội dung phải bằng tiếng Việt.
-        - Câu hỏi loại SINGLE_CHOICE.
-        - Không thêm bất kỳ trường nào khác.
-        - Đáp án phải khớp 1 trong các option.
-        - "solution" phải giải thích chi tiết tại sao đáp án đúng.
-
-        Hãy tạo ${count} câu hỏi dựa trên yêu cầu sau:
+        
+        YÊU CẦU BẮT BUỘC:
+        1. Tất cả nội dung phải bằng tiếng Việt.
+        2. Loại câu hỏi: SINGLE_CHOICE.
+        3. Mỗi câu hỏi phải có 4 đáp án, mỗi đáp án PHẢI là một chuỗi có nội dung thực sự (không được để trống, không được đặt 'A', 'B'… mà không có nội dung).
+        4. Đáp án đúng ("answer") PHẢI trùng 100% với một trong các chuỗi trong mảng "options".
+        5. "solution" phải giải thích rõ ràng, chi tiết tại sao đáp án đó đúng.
+        6. Không được tạo câu hỏi hoặc đáp án mơ hồ, không hợp lý hoặc không liên quan.
+        7. Không sinh bất kỳ ký tự thừa, xuống dòng thừa, dấu phẩy sai JSON hoặc nội dung ngoài JSON.
+        
+        Nếu bạn không thể tuân thủ bất kỳ yêu cầu nào ở trên, bạn phải tự sửa và tạo lại cho đến khi JSON hợp lệ tuyệt đối.
+        
+        Bây giờ, hãy tạo chính xác ${count} câu hỏi dựa trên yêu cầu sau:
         ${prompt}
     `;
 
