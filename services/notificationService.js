@@ -20,25 +20,47 @@ class NotificationService {
     }
 
     // 2. Lấy danh sách thông báo của User (có phân trang)
+    // --- LOGIC CŨ: Thông báo cá nhân (Cái Chuông) ---
     async getUserNotifications(userId, page = 1, limit = 10) {
-        const skip = (page - 1) * limit;
-
-        const notifications = await Notification.find({ recipient: userId })
-            .sort({ createdAt: -1 }) // Mới nhất lên đầu
-            .skip(skip)
-            .limit(limit)
-            .populate('sender', 'name avatar'); // Lấy thêm info người gửi nếu cần
-
-        const total = await Notification.countDocuments({ recipient: userId });
-        const unreadCount = await Notification.countDocuments({ recipient: userId, isRead: false });
-
-        return {
-            notifications,
-            total,
-            currentPage: page,
-            totalPages: Math.ceil(total / limit),
-            unreadCount
+        // Chỉ lấy các thông báo có recipient là user đó
+        // Loại trừ SYSTEM_UPDATE ra (vì nó dành cho Popup, không hiện ở chuông cho đỡ rối)
+        const filter = {
+            recipient: userId,
+            type: { $ne: 'SYSTEM_UPDATE' }
         };
+
+        const notifications = await Notification.find(filter)
+            .sort({ createdAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .populate('sender', 'name avatar');
+
+        const total = await Notification.countDocuments(filter);
+        const unreadCount = await Notification.countDocuments({ ...filter, isRead: false });
+
+        return { notifications, total, unreadCount };
+    }
+
+    // --- LOGIC MỚI: Lấy thông báo Update (Cái Popup) ---
+    async getLatestSystemUpdate(userRole) {
+        // Tìm bản ghi loại SYSTEM_UPDATE mới nhất
+        return await Notification.findOne({
+            type: 'SYSTEM_UPDATE',
+            isActive: true,
+            $or: [{ targetRole: 'all' }, { targetRole: userRole }]
+        })
+            .sort({ createdAt: -1 }) // Lấy cái mới tạo nhất
+            .select('version title features createdAt'); // Chỉ lấy field cần thiết
+    }
+
+    // --- ADMIN: Tạo thông báo Update ---
+    async createSystemUpdate(data) {
+        // Data input ví dụ: { version: '1.5.0', title: '...', features: [...], targetRole: 'teacher' }
+        return await Notification.create({
+            ...data,
+            type: 'SYSTEM_UPDATE',
+            recipient: null // Quan trọng: Global không có recipient cụ thể
+        });
     }
 
     // 3. Đánh dấu 1 thông báo là đã đọc

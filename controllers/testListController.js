@@ -63,7 +63,7 @@ exports.getTestDetail = async (req, res) => {
 exports.updateTest = async (req, res) => {
     try {
         const { id } = req.params;
-        const updateData = req.body; // Dữ liệu cần sửa
+        const updateData = req.body;
         const userInformation = req.user;
 
         const updatedTest = await testListService.updateTest(id, updateData, userInformation);

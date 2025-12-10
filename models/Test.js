@@ -10,7 +10,8 @@ const TestSchema = new mongoose.Schema({
     tags: [String],
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
-    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true }
+    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: 'users', required: true },
+    status: { type: String,  enum: ['activate', 'deactivate'], default: 'deactivate' , required: true },
 });
 
 module.exports = mongoose.model('Test', TestSchema);
