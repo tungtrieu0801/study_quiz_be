@@ -64,6 +64,29 @@ class NotificationController {
             return res.status(500).json({ success: false, message: error.message });
         }
     }
+
+    async getLatestUpdate(req, res) {
+        try {
+            const userRole = req.user.role;
+            const updateData = await notificationService.getLatestSystemUpdate(userRole);
+
+            // Trả về data (có thể null nếu không có update nào)
+            return res.status(200).json({ success: true, data: updateData });
+        } catch (error) {
+            return res.status(500).json({ success: false, message: error.message });
+        }
+    }
+
+    // [POST] /api/notifications/system-update (Dùng cho Admin nhập liệu)
+    async createSystemUpdate(req, res) {
+        try {
+            // Check quyền Admin ở middleware rồi
+            const newUpdate = await notificationService.createSystemUpdate(req.body);
+            return res.status(201).json({ success: true, data: newUpdate });
+        } catch (error) {
+            return res.status(500).json({ success: false, message: error.message });
+        }
+    }
 }
 
 module.exports = new NotificationController();

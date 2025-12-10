@@ -65,6 +65,7 @@ exports.getTestList = async ({ page, size, userInformation }) => {
         queryCondition.teacherId = userId;
     } else if (userRole === "student") {
         queryCondition.teacherId = userInformation.teacherId;
+        queryCondition.status = "activate"
     }
 
     // ===== 2. Đếm tổng cho FE =====
@@ -124,26 +125,35 @@ exports.getTestDetail = async (id) => {
 exports.updateTest = async (id, updateData, userInformation) => {
     // 1. Check quyền Teacher
     if (userInformation.role !== 'teacher') {
-        throw new Error('Only teacher can update tests');
+        throw new Error('Permission denied: Only teachers can update tests');
     }
 
-    // 2. Cập nhật thời gian update
+    // 2. Lọc dữ liệu an toàn (Security Hygiene)
+    // Ngăn chặn user gửi lên các trường không được phép sửa đổi
+    delete updateData._id;
+    delete updateData.createdBy;
+    delete updateData.createdAt;
+
+    // 3. Cập nhật thời gian update
     updateData.updatedAt = new Date();
 
-    // 3. Thực hiện update
-    // { new: true } trả về document mới sau khi update
-    const updatedTest = await Test.findByIdAndUpdate(id, updateData, {
-        new: true,
-        runValidators: true
-    });
+    // 4. Thực hiện update
+    // Mongoose: findByIdAndUpdate chỉ update các field có trong updateData
+    const updatedTest = await Test.findByIdAndUpdate(
+        id,
+        updateData, // Ví dụ: { title: "Tên mới" } -> chỉ sửa title, questions giữ nguyên
+        {
+            new: true, // Trả về document sau khi đã sửa
+            runValidators: true // Chạy validate của Schema (ví dụ check required, min/max)
+        }
+    );
 
     if (!updatedTest) {
         throw new Error('Test not found');
     }
 
     return updatedTest;
-}
-
+};
 /**
  * Delete a test
  * @param {string} id
