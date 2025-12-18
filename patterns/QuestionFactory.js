@@ -10,7 +10,7 @@ class BaseQuestionProduct {
 
     validate() {
         if (!this.data.content) throw new Error("Nội dung câu hỏi không được để trống");
-        if (!this.data.answer) throw new Error("Đáp án không được để trống");
+        // if (!this.data.answer) throw new Error("Đáp án không được để trống");
     }
 
     getData() {
@@ -72,9 +72,11 @@ class FillInTheBlankQuestion extends BaseQuestionProduct {
 
 class TrueFalseQuestion extends BaseQuestionProduct {
     validate() {
+        if (this.data.answer === 'true') this.data.answer = true;
+        if (this.data.answer === 'false') this.data.answer = false;
         super.validate();
         if (typeof this.data.answer !== 'boolean') {
-            throw new Error("True/False: Đáp án phải là true hoặc false.");
+            throw new Error("True/False: Đáp án phải là true hoặc false.")
         }
     }
 }
