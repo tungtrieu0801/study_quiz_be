@@ -10,7 +10,7 @@ class BaseQuestionProduct {
 
     validate() {
         if (!this.data.content) throw new Error("Nội dung câu hỏi không được để trống");
-        if (!this.data.answer) throw new Error("Đáp án không được để trống");
+        // if (!this.data.answer) throw new Error("Đáp án không được để trống");
     }
 
     getData() {
@@ -64,17 +64,19 @@ class ShortAnswerQuestion extends BaseQuestionProduct {
 class FillInTheBlankQuestion extends BaseQuestionProduct {
     validate() {
         super.validate();
-        if (!this.data.answer || !Array.isArray(this.data.answer) || this.data.answer.length === 0) {
-            throw new Error("Fill in the Blank: Đáp án phải là một mảng không rỗng.");
-        }
+        // if (!this.data.answer || !Array.isArray(this.data.answer) || this.data.answer.length === 0) {
+        //     throw new Error("Fill in the Blank: Đáp án phải là một mảng không rỗng.");
+        // }
     }
 }
 
 class TrueFalseQuestion extends BaseQuestionProduct {
     validate() {
+        if (this.data.answer === 'true') this.data.answer = true;
+        if (this.data.answer === 'false') this.data.answer = false;
         super.validate();
         if (typeof this.data.answer !== 'boolean') {
-            throw new Error("True/False: Đáp án phải là true hoặc false.");
+            throw new Error("True/False: Đáp án phải là true hoặc false.")
         }
     }
 }
