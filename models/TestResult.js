@@ -9,7 +9,9 @@ const TestResultSchema = new mongoose.Schema({
     // Lưu chi tiết để sau này làm Dashboard thống kê Tag
     details: [{
         questionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Question' },
-        userAnswer: String,
+        userAnswer: {
+            type: mongoose.Schema.Types.Mixed
+        },
         isCorrect: Boolean,
         tags: [String] // Lưu snapshot tags tại thời điểm làm bài để thống kê nhanh
     }],

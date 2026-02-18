@@ -4,17 +4,25 @@ const QuestionFactory  = require('../patterns/QuestionFactory');
 
 // Helper function để so sánh đáp án (Chấm điểm)
 function checkAnswer(questionType, userAnswer, systemAnswer) {
+
     if (questionType === 'MULTIPLE_SELECT') {
-        // So sánh 2 mảng: Phải có cùng độ dài và cùng phần tử
         if (!Array.isArray(userAnswer) || !Array.isArray(systemAnswer)) return false;
         if (userAnswer.length !== systemAnswer.length) return false;
+
         const sortedUser = [...userAnswer].sort();
         const sortedSystem = [...systemAnswer].sort();
+
         return sortedUser.every((value, index) => value === sortedSystem[index]);
     }
-    // Mặc định so sánh chuỗi (SINGLE_CHOICE)
-    return userAnswer === systemAnswer;
+
+    // SINGLE_CHOICE hoặc mặc định
+    if (Array.isArray(userAnswer) && Array.isArray(systemAnswer)) {
+        return JSON.stringify(userAnswer) === JSON.stringify(systemAnswer);
+    }
+
+    return String(userAnswer).trim() === String(systemAnswer).trim();
 }
+
 
 /**
  * Register new user

@@ -64,9 +64,9 @@ class ShortAnswerQuestion extends BaseQuestionProduct {
 class FillInTheBlankQuestion extends BaseQuestionProduct {
     validate() {
         super.validate();
-        if (!this.data.answer || !Array.isArray(this.data.answer) || this.data.answer.length === 0) {
-            throw new Error("Fill in the Blank: Đáp án phải là một mảng không rỗng.");
-        }
+        // if (!this.data.answer || !Array.isArray(this.data.answer) || this.data.answer.length === 0) {
+        //     throw new Error("Fill in the Blank: Đáp án phải là một mảng không rỗng.");
+        // }
     }
 }
 
