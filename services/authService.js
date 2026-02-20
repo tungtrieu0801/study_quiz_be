@@ -84,7 +84,6 @@ exports.bulkRegister = async (users) => {
         throw new AppError("Duplicate usernames in request", 400);
     }
 
-    // Kiểm tra trùng username trong database
     const existingUsers = await User.find({
         username: { $in: usernames }
     }).select("username");
