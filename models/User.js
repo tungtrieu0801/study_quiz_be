@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now },
     fullName: { type: String, trim: true },
     gradeLevel: { type: String, trim: true },
+    class: { type: String, trim: true },
     firstName: { type: String, trim: true },
     teacherId: { type: String },
 });
@@ -24,6 +25,20 @@ UserSchema.pre('save', function (next) {
         }
     }
     next();
+});
+
+UserSchema.set('toJSON', {
+    transform: function (doc, ret) {
+        delete ret.passwordHash;
+        return ret;
+    }
+});
+
+UserSchema.set('toObject', {
+    transform: function (doc, ret) {
+        delete ret.passwordHash;
+        return ret;
+    }
 });
 
 module.exports = mongoose.model('User', UserSchema);

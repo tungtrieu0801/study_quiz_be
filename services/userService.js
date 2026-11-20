@@ -11,18 +11,21 @@ exports.updateUser = async (dto) => {
         if (dto.fullName !== undefined) user.fullName = dto.fullName;
         if (dto.username !== undefined) user.username = dto.username;
         if (dto.gradeLevel !== undefined) user.gradeLevel = dto.gradeLevel;
-        if (dto.password !== undefined) {
+        if (dto.class !== undefined) user.class = dto.class;
+        if (dto.password !== undefined && dto.password.trim() !== "") {
             user.passwordHash = await bcrypt.hash(dto.password, 10);
         }
         await user.save();
-        user.password = undefined;
-        return user;
+        const userObj = user.toObject();
+        delete userObj.passwordHash;
+        delete userObj.password;
+        return userObj;
     } catch (e) {
         return { error: "Cannot update user" };
     }
 }
 
-exports.getListUser = async (userInformation, page, size, gradeLevel, studentName, role, teacherId) => {
+exports.getListUser = async (userInformation, page, size, gradeLevel, studentName, role, teacherId, classParam) => {
     const filter = {};
     if (role !== undefined && role !== null && role !== "") {
         filter.role = role;
@@ -30,6 +33,10 @@ exports.getListUser = async (userInformation, page, size, gradeLevel, studentNam
 
     if (gradeLevel !== undefined && gradeLevel !== null && gradeLevel !== "") {
         filter.gradeLevel = gradeLevel;
+    }
+
+    if (classParam !== undefined && classParam !== null && classParam !== "") {
+        filter.class = classParam;
     }
 
     if (studentName && studentName.trim() !== "") {
@@ -41,11 +48,26 @@ exports.getListUser = async (userInformation, page, size, gradeLevel, studentNam
             $in: [teacherId.trim()]
         };
     }
-    const students = await User.find(filter)
-        .skip(page * size)
-        .limit(size)
+
+    const pageNum = !isNaN(page) && page >= 0 ? page : 0;
+    const sizeNum = !isNaN(size) && size > 0 ? size : 10;
+
+    const rawStudents = await User.find(filter)
+        .select('-passwordHash')
+        .skip(pageNum * sizeNum)
+        .limit(sizeNum)
         .collation({ locale: "vi", strength: 1 })
-        .sort({ firstName: 1, fullName: 1, id: 1 });
+        .sort({ firstName: 1, fullName: 1, id: 1 })
+        .lean();
+
+    const students = rawStudents.map(student => {
+        delete student.passwordHash;
+        if (!student.class && student.gradeLevel) {
+            student.class = student.gradeLevel;
+        }
+        return student;
+    });
+
     const total = await User.countDocuments(filter);
 
     return { students, total };

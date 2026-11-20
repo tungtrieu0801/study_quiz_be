@@ -17,6 +17,7 @@ exports.registerUser = async (dto) => {
         username: dto.username,
         passwordHash: passwordHash,
         gradeLevel: dto.gradeLevel,
+        class: dto.class,
         fullName: dto.fullName,
         teacherId: dto.teacherId,
     });
@@ -26,6 +27,8 @@ exports.registerUser = async (dto) => {
         id: user._id,
         username: user.username,
         fullName: user.fullName,
+        gradeLevel: user.gradeLevel,
+        class: user.class,
     };
 };
 
@@ -107,6 +110,7 @@ exports.bulkRegister = async (users) => {
                 username: u.username,
                 passwordHash,
                 gradeLevel: u.gradeLevel,
+                class: u.class || u.className,
                 fullName: u.fullName,
                 teacherId: u.teacherId,
                 role: u.role || "student"

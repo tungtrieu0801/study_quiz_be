@@ -28,8 +28,9 @@ exports.getListUser = async (req, res) => {
     const studentName = req.query.studentName;
     const role = req.query.role;
     const teacherId = req.query.teacherId;
+    const classParam = req.query.class || req.query.className;
     try {
-        const listStudent = await userService.getListUser(userInformation, page, size, gradeLevel, studentName, role, teacherId);
+        const listStudent = await userService.getListUser(userInformation, page, size, gradeLevel, studentName, role, teacherId, classParam);
         res.status(200).json({
             status: "success",
             message: "User Information",
